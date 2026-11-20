@@ -1,0 +1,24 @@
+# Benchmark Execution Report: Gemini 4 Neon (Low), run 1
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Antigravity CLI 1.5.13`
+- **Model ID**: `gemini-4-neon-low`
+- **Reasoning Effort**: `Low`
+- **Deliverable**: `index.html`
+- **Code Size**: 73,751 bytes | 2,123 LOC
+- **SHA-256**: `ea2fe677d4dffccb9b5ff29953ebac60e838e3dc692bbd67b94878c689fb6826`
+- **Wall-Clock Duration**: 599.31s
+- **Agent Turns / Steps**: 11
+- **Tool Calls**: 16
+- **Input Tokens (Uncached)**: 158,566
+- **Cached Read Tokens**: 372,373
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 9,566
+- **Output Tokens**: 70,877
+- **Verification**: FAIL (95.2% — 20/21 checks)
+- **Strategy Score**: 41.05 waves held (mean of five undisclosed seeds: 41.85, 41.93, 40.45, 41.73, 39.28)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=fbad5ad0a31c6ac8, backward=107d6792886d5f06, freshReload=fbad5ad0a31c6ac8, endClamp=100/100, endedCanvasFrozen=True

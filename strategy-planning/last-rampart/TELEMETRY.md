@@ -17,6 +17,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Codex GPT 6.2 Sol (XHigh)** | run-1 | Codex CLI 0.170.0 | `XHigh` | **PASS** (21/21) | 44.99 | **44.99** | 1657.7s | 5,383,479 | 5,227,008 | 15,788 | 73,605 | 79,420 B | `18d0575cd674...` |
 | **Codex GPT 6.2 Sol (XHigh)** | run-2 | Codex CLI 0.170.0 | `XHigh` | **PASS** (21/21) | 45.47 | **45.47** | 1456.2s | 4,060,575 | 3,901,952 | 14,719 | 64,166 | 80,487 B | `7b77494bbfad...` |
 | **Codex GPT 6.2 Sol (XHigh)** | run-3 | Codex CLI 0.170.0 | `XHigh` | **PASS** (21/21) | 41.66 | **41.66** | 1480.5s | 4,597,553 | 4,443,520 | 13,105 | 65,636 | 76,662 B | `e06338c58027...` |
+| **Gemini 4 Neon (Low)** | run-1 | Antigravity CLI 1.5.13 | `Low` | **FAIL** (20/21) | 41.05 | **0.00** | 599.3s | 158,566 | 372,373 | 9,566 | 70,877 | 73,751 B | `ea2fe677d4df...` |
 
 - **Waves Held** is the strategy score (mean over five undisclosed seeds), measured even when a shell check failed;
   **Round Score** is the published figure and is 0 for a run that did not ship.
