@@ -1,0 +1,25 @@
+# Benchmark Execution Report: Gemini 4 Neon (Medium), run 1
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Antigravity CLI 1.5.13`
+- **Model ID**: `gemini-4-neon-medium`
+- **Reasoning Effort**: `Medium`
+- **Deliverable**: `index.html`
+- **Code Size**: 107,975 bytes | 3,037 LOC
+- **SHA-256**: `434ae5581ae9345fffbc1511e48fcd4199eb959adeb7e2ffae7ab02a30dfc341`
+- **Wall-Clock Duration**: 1032.13s
+- **Agent Turns / Steps**: 29
+- **Tool Calls**: 28
+- **Input Tokens (Uncached)**: 256,929
+- **Cached Read Tokens**: 1,636,809
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 18,124
+- **Output Tokens**: 110,176
+- **Verification**: FAIL (90.5% — 19/21 checks)
+- **Strategy Score**: 44.87 waves held (mean of five undisclosed seeds: 45.65, 43.53, 46.33, 44.75, 44.10)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `Strategy grader: Rules conformance, seed 42`: reference={'score': 45.78, 'fallTick': 1851, 'hash': 'c33b3980'} model={'score': 46.33, 'fallTick': 1873, 'hash': '0fbc7666'}
+  - `Strategy grader: Rules conformance, seed undisclosed`: reference={'score': 45.33, 'fallTick': 1833, 'hash': 'e34d85ea'} model={'score': 44.58, 'fallTick': 1803, 'hash': '0b3603fa'}
