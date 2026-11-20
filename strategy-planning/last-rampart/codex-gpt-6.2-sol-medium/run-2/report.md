@@ -1,0 +1,24 @@
+# Benchmark Execution Report: Codex GPT 6.2 Sol (Medium), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Codex CLI 0.170.0`
+- **Model ID**: `gpt-6.2-sol`
+- **Reasoning Effort**: `Medium`
+- **Deliverable**: `index.html`
+- **Code Size**: 66,131 bytes | 1,565 LOC
+- **SHA-256**: `e12f9045b365dda8b30ab2c3eb503c25d94052f85df431857dc65d5acb43f416`
+- **Wall-Clock Duration**: 975.88s
+- **Agent Turns / Steps**: 55
+- **Tool Calls**: 50
+- **Input Tokens (Uncached)**: 2,605,025
+- **Cached Read Tokens**: 2,500,096
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 4,980
+- **Output Tokens**: 43,555
+- **Verification**: FAIL (95.2% — 20/21 checks)
+- **Strategy Score**: 45.12 waves held (mean of five undisclosed seeds: 44.73, 44.15, 46.63, 45.33, 44.75)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=9d9b834388facfa1, backward=9d9b834388facfa1, freshReload=00fe5afeaf56488d, endClamp=100/100, endedCanvasFrozen=True

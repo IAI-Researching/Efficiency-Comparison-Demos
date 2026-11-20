@@ -1,0 +1,22 @@
+# Benchmark Execution Report: Codex GPT 6.2 Sol (XHigh), run 1
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Codex CLI 0.170.0`
+- **Model ID**: `gpt-6.2-sol`
+- **Reasoning Effort**: `Xhigh`
+- **Deliverable**: `index.html`
+- **Code Size**: 79,420 bytes | 1,989 LOC
+- **SHA-256**: `18d0575cd6740b1aee68d9b341076976784d1df830878d8a03570b5b52500fbb`
+- **Wall-Clock Duration**: 1657.68s
+- **Agent Turns / Steps**: 89
+- **Tool Calls**: 84
+- **Input Tokens (Uncached)**: 5,383,479
+- **Cached Read Tokens**: 5,227,008
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 15,788
+- **Output Tokens**: 73,605
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 44.99 waves held (mean of five undisclosed seeds: 45.65, 42.33, 46.65, 44.55, 45.75)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 44.99 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
