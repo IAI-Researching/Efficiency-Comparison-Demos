@@ -1,0 +1,22 @@
+# Benchmark Execution Report: Gemini 4 Neon (Medium), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Antigravity CLI 1.5.13`
+- **Model ID**: `gemini-4-neon-medium`
+- **Reasoning Effort**: `Medium`
+- **Deliverable**: `index.html`
+- **Code Size**: 106,740 bytes | 2,951 LOC
+- **SHA-256**: `3b5fee8509e58aec86f9a930d57aaebd320482e36cfbac784d788d2f8b30e36d`
+- **Wall-Clock Duration**: 1032.61s
+- **Agent Turns / Steps**: 24
+- **Tool Calls**: 22
+- **Input Tokens (Uncached)**: 266,510
+- **Cached Read Tokens**: 1,412,121
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 16,020
+- **Output Tokens**: 118,472
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 45.65 waves held (mean of five undisclosed seeds: 45.53, 44.08, 46.85, 46.05, 45.75)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 45.65 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)

@@ -15,11 +15,8 @@
 - **Cache Creation Tokens**: 0
 - **Thinking / Reasoning Tokens**: 18,124
 - **Output Tokens**: 110,176
-- **Verification**: FAIL (90.5% — 19/21 checks)
-- **Strategy Score**: 44.87 waves held (mean of five undisclosed seeds: 45.65, 43.53, 46.33, 44.75, 44.10)
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 45.01 waves held (mean of five undisclosed seeds: 44.63, 43.05, 46.93, 45.43, 45.00)
 - **Self-check Vectors**: A match, B match
-- **Round Score**: 0.0 (0 when the run did not ship)
+- **Round Score**: 45.01 (0 when the run did not ship)
 - **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
-- **Failed Checks**:
-  - `Strategy grader: Rules conformance, seed 42`: reference={'score': 45.78, 'fallTick': 1851, 'hash': 'c33b3980'} model={'score': 46.33, 'fallTick': 1873, 'hash': '0fbc7666'}
-  - `Strategy grader: Rules conformance, seed undisclosed`: reference={'score': 45.33, 'fallTick': 1833, 'hash': 'e34d85ea'} model={'score': 44.58, 'fallTick': 1803, 'hash': '0b3603fa'}

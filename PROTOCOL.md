@@ -29,3 +29,19 @@ Scoring seeds live in the git-ignored `baseline/secret_seeds.json`. Every model 
 ## Grader changes
 
 - **2026-11-20, Last Rampart, during the Sol round.** The rules-conformance check compared the model's `score` exactly. The prompt says "rounded to 2 decimals" without naming a method, and `Math.round(x * 100) / 100` and `Number(x.toFixed(2))` give results 0.01 apart when the exact value ends in 5 at the third decimal (45.925 gives 45.93 or 45.92). The check now requires the fall tick and log hash to match exactly and allows the score to differ by at most 0.01. All 12 Sol runs were re-graded with the fixed grader (`baseline/regrade.py`, recorded under `regrades` in each `metrics.json`); one result changed: Sol high run 3, from "did not ship" to 45.61 waves held (its fall tick and hash had matched).
+- **2026-11-20, Last Rampart, during the Neon round.** Three Neon runs failed rules conformance with simulators that follow the rules correctly. The cause was the view handed to the strategy: the prompt lists `EnemyView.slowed` without a type, and says "All quantities are integers", but the reference passed `true`/`false`. Neon's simulators pass `1`/`0` or the remaining slow ticks, and Neon's strategies test `slowed === 0`, so the same strategy made different choices in the reference than in the model's own simulator. That broke the conformance check, and it also skewed the strategy score.
+
+  An audit then played one fixed probe game, whose choices never depend on the view, through all 19 simulators of both rounds. It compared every field of every `plan()` and `target()` call against the reference. Two fields differ in ways the prompt allows:
+  - `slowed`, as above.
+  - `state.slots[].x/y`: three Sol simulators give tile numbers, the reference gives centi-tiles.
+
+  Every other field matched in all 19.
+
+  `score.py` now detects which reading the model's own simulator uses and gives the strategy that same view in the reference, for both the conformance check and the strategy score. A strategy is therefore always graded with the view its author wrote it for. The prompt is unchanged, so every model still gets byte-identical text. The model never sees the grader, so no run needed repeating.
+
+  All 19 runs were re-graded:
+  - The 12 Sol results are unchanged.
+  - Neon low run 2, medium run 1 and high run 2 went from "did not ship" to 38.18, 45.01 and 45.56 waves held.
+  - Neon medium run 2 went from 45.69 to 45.65, now scored with its own reading.
+
+  `audit_views.py` in the benchmark folder repeats the audit for any deliverable. Every future conformance failure is checked with it before it is counted as the model's fault.
