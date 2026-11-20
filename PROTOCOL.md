@@ -24,7 +24,7 @@ Per run: total tokens (uncached input, cache reads, cache writes, output), API-e
 
 ## Secret seeds
 
-Scoring seeds live in the git-ignored `baseline/secret_seeds.json` and are published with the round's results, once every run in the round is graded.
+Scoring seeds live in the git-ignored `baseline/secret_seeds.json`. Every model on a benchmark is graded on the same seeds, so they stay undisclosed until the **last planned round on that benchmark** is graded, and are then published with its results (decided 2026-11-20). Until then, anyone can re-run the published strategies against the reference engine on their own seeds.
 
 ## Grader changes
 
