@@ -87,7 +87,11 @@ def main():
             for seed in (42, seeds["conformance"]):
                 ref = run({"kind": "reference", "strategy": S, "seed": seed, "maxTicks": MAX_TICKS}, tmp)
                 own = run({"kind": "model", "strategy": S, "sim": M, "seed": seed, "maxTicks": MAX_TICKS}, tmp)
-                same = ref.get("ok") and own.get("ok") and [own["score"], own["fallTick"], own["hash"]] == [ref["score"], ref["fallTick"], ref["hash"]]
+                # fallTick and hash must match exactly. The prompt says "rounded to 2 decimals" without naming a
+                # method, and Math.round(x*100)/100 and Number(x.toFixed(2)) differ by 0.01 when x ends in 5 at the
+                # third decimal (45.925 -> 45.93 or 45.92), so the score may differ by at most 0.01 (fix 2026-11-20).
+                same = (ref.get("ok") and own.get("ok") and [own["fallTick"], own["hash"]] == [ref["fallTick"], ref["hash"]]
+                        and isinstance(own["score"], (int, float)) and abs(own["score"] - ref["score"]) <= 0.0100001)
                 check("Rules conformance, seed %s" % ("42" if seed == 42 else "undisclosed"), same,
                       "reference=%s model=%s" % ({k: ref.get(k) for k in ("score", "fallTick", "hash", "error") if k in ref},
                                                  {k: own.get(k) for k in ("score", "fallTick", "hash", "error") if k in own}))

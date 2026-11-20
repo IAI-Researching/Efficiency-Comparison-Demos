@@ -25,3 +25,7 @@ Per run: total tokens (uncached input, cache reads, cache writes, output), API-e
 ## Secret seeds
 
 Scoring seeds live in the git-ignored `baseline/secret_seeds.json` and are published with the round's results, once every run in the round is graded.
+
+## Grader changes
+
+- **2026-11-20, Last Rampart, during the Sol round.** The rules-conformance check compared the model's `score` exactly. The prompt says "rounded to 2 decimals" without naming a method, and `Math.round(x * 100) / 100` and `Number(x.toFixed(2))` give results 0.01 apart when the exact value ends in 5 at the third decimal (45.925 gives 45.93 or 45.92). The check now requires the fall tick and log hash to match exactly and allows the score to differ by at most 0.01. All 12 Sol runs were re-graded with the fixed grader (`baseline/regrade.py`, recorded under `regrades` in each `metrics.json`); one result changed: Sol high run 3, from "did not ship" to 45.61 waves held (its fall tick and hash had matched).
