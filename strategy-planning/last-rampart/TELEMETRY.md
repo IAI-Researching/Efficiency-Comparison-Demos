@@ -29,6 +29,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Gemini 4 Neon (XHigh)** | run-1 | Antigravity CLI 1.5.13 | `XHigh` | **PASS** (21/21) | 47.84 | **47.84** | 2821.6s | 695,317 | 8,338,766 | 77,049 | 311,393 | 140,335 B | `19f871d4b4a3...` |
 | **Gemini 4 Neon (XHigh)** | run-2 | Antigravity CLI 1.5.13 | `XHigh` | **PASS** (21/21) | 47.83 | **47.83** | 2450.3s | 379,967 | 10,622,314 | 78,530 | 254,984 | 136,415 B | `78bda6cabbcd...` |
 | **Gemini 4 Neon (XHigh)** | run-3 | Antigravity CLI 1.5.13 | `XHigh` | **PASS** (21/21) | 46.01 | **46.01** | 3154.9s | 537,414 | 15,652,916 | 84,432 | 388,243 | 134,813 B | `929ba90c6d4a...` |
+| **DeepSeek v4.1 Flash (Off)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Off` | **FAIL** (17/21) | 37.05 | **0.00** | 3350.9s | 239,677 | 130,138,752 | 0 | 319,375 | 104,581 B | `e55447f89b61...` |
 
 - **Waves Held** is the strategy score (mean over five undisclosed seeds), measured even when a shell check failed;
   **Round Score** is the published figure and is 0 for a run that did not ship.

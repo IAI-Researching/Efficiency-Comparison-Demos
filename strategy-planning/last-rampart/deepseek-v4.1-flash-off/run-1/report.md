@@ -1,0 +1,27 @@
+# Benchmark Execution Report: DeepSeek v4.1 Flash (Off), run 1
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `DeepSeek CLI 0.2.2-rc.5`
+- **Model ID**: `deepseek-flash`
+- **Reasoning Effort**: `Off`
+- **Deliverable**: `index.html`
+- **Code Size**: 104,581 bytes | 2,063 LOC
+- **SHA-256**: `e55447f89b611b4184b75d19e81c654a9fc376003ff6ff68679a70bf60dcfd35`
+- **Wall-Clock Duration**: 3350.95s
+- **Agent Turns / Steps**: 596
+- **Tool Calls**: 600
+- **Input Tokens (Uncached)**: 239,677
+- **Cached Read Tokens**: 130,138,752
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 0
+- **Output Tokens**: 319,375
+- **Verification**: FAIL (81.0% — 17/21 checks)
+- **Strategy Score**: 37.05 waves held (mean of five undisclosed seeds: 36.83, 39.85, 36.73, 37.53, 34.33)
+- **Self-check Vectors**: A mismatch, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] Pause/Resume Canvas Freeze & 2.0x Playback Rate Verified`: pausedScrub=(1.15 -> 1.15), pausedCanvasFrozen=False, observedRate2x=1.98x
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=a2a828200c173ffc, backward=48cae9ec0bfb4a62, freshReload=48cae9ec0bfb4a62, endClamp=100/100, endedCanvasFrozen=False
+  - `Strategy grader: Rules conformance, seed 42`: reference={'score': 36.92, 'fallTick': 1497, 'hash': 'd1ff2bfe'} model={'score': 37.92, 'fallTick': 1537, 'hash': '92bd522b'}
+  - `Strategy grader: Rules conformance, seed undisclosed`: reference={'score': 34.63, 'fallTick': 1405, 'hash': '056e725a'} model={'score': 35.23, 'fallTick': 1429, 'hash': '318de881'}
