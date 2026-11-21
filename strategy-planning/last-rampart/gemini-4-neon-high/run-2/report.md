@@ -15,8 +15,10 @@
 - **Cache Creation Tokens**: 0
 - **Thinking / Reasoning Tokens**: 56,850
 - **Output Tokens**: 264,606
-- **Verification**: PASS (100.0% — 21/21 checks)
+- **Verification**: FAIL (95.2% — 20/21 checks)
 - **Strategy Score**: 45.56 waves held (mean of five undisclosed seeds: 45.45, 43.53, 47.13, 48.65, 43.05)
 - **Self-check Vectors**: A match, B match
-- **Round Score**: 45.56 (0 when the run did not ship)
+- **Round Score**: 0.0 (0 when the run did not ship)
 - **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] WebGL Canvas-Only 3D Frame Progression & Scrubber Advance`: canvasHashes=(0e9c212747c0 -> 0e9c212747c0), drawCalls=(19863 -> 22865), scrubber=(1.550 -> 2.183)

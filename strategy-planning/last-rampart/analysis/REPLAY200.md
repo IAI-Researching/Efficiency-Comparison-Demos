@@ -6,9 +6,9 @@ Each graded strategy replayed on seeds 1000-1199 in the reference engine, with i
 |---|---|---|---|---|---|
 | 1 | gemini-4-neon-xhigh/run-2 | 47.94 | 0.078 | 47.83 | 47.83 |
 | 2 | gemini-4-neon-xhigh/run-1 | 47.85 | 0.077 | 47.84 | 47.84 |
-| 3 | gemini-4-neon-high/run-2 | 46.56 | 0.105 | 45.56 | 45.56 |
+| 3 | gemini-4-neon-high/run-2 | 46.56 | 0.105 | 45.56 | 0.0 |
 | 4 | codex-gpt-6.2-sol-medium/run-1 | 46.48 | 0.085 | 45.73 | 45.73 |
-| 5 | gemini-4-neon-xhigh/run-3 | 46.38 | 0.132 | 46.01 | 46.01 |
+| 5 | gemini-4-neon-xhigh/run-3 | 46.38 | 0.132 | 46.01 | 0.0 |
 | 6 | codex-gpt-6.2-sol-high/run-3 | 46.06 | 0.075 | 45.61 | 45.61 |
 | 7 | codex-gpt-6.2-sol-xhigh/run-2 | 45.93 | 0.104 | 45.47 | 45.47 |
 | 8 | codex-gpt-6.2-sol-xhigh/run-1 | 45.62 | 0.091 | 44.99 | 44.99 |

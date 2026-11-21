@@ -24,12 +24,16 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Gemini 4 Neon (Medium)** | run-2 | Antigravity CLI 1.5.13 | `Medium` | **PASS** (21/21) | 45.65 | **45.65** | 1032.6s | 266,510 | 1,412,121 | 16,020 | 118,472 | 106,740 B | `3b5fee8509e5...` |
 | **Gemini 4 Neon (Medium)** | run-3 | Antigravity CLI 1.5.13 | `Medium` | **PASS** (21/21) | 44.01 | **44.01** | 877.7s | 241,805 | 1,538,458 | 20,566 | 101,829 | 108,655 B | `ce53c12397c9...` |
 | **Gemini 4 Neon (High)** | run-1 | Antigravity CLI 1.5.13 | `High` | **PASS** (21/21) | 45.47 | **45.47** | 1838.5s | 290,620 | 3,994,612 | 41,392 | 219,146 | 124,195 B | `333c0a146dea...` |
-| **Gemini 4 Neon (High)** | run-2 | Antigravity CLI 1.5.13 | `High` | **PASS** (21/21) | 45.56 | **45.56** | 2290.8s | 579,569 | 6,894,869 | 56,850 | 264,606 | 122,855 B | `7895cb5384a6...` |
+| **Gemini 4 Neon (High)** | run-2 | Antigravity CLI 1.5.13 | `High` | **FAIL** (20/21) | 45.56 | **0.00** | 2290.8s | 579,569 | 6,894,869 | 56,850 | 264,606 | 122,855 B | `7895cb5384a6...` |
 | **Gemini 4 Neon (High)** | run-3 | Antigravity CLI 1.5.13 | `High` | **PASS** (21/21) | 45.14 | **45.14** | 2103.4s | 336,300 | 6,367,207 | 47,722 | 252,337 | 121,228 B | `ef4f453f4dba...` |
 | **Gemini 4 Neon (XHigh)** | run-1 | Antigravity CLI 1.5.13 | `XHigh` | **PASS** (21/21) | 47.84 | **47.84** | 2821.6s | 695,317 | 8,338,766 | 77,049 | 311,393 | 140,335 B | `19f871d4b4a3...` |
 | **Gemini 4 Neon (XHigh)** | run-2 | Antigravity CLI 1.5.13 | `XHigh` | **PASS** (21/21) | 47.83 | **47.83** | 2450.3s | 379,967 | 10,622,314 | 78,530 | 254,984 | 136,415 B | `78bda6cabbcd...` |
-| **Gemini 4 Neon (XHigh)** | run-3 | Antigravity CLI 1.5.13 | `XHigh` | **PASS** (21/21) | 46.01 | **46.01** | 3154.9s | 537,414 | 15,652,916 | 84,432 | 388,243 | 134,813 B | `929ba90c6d4a...` |
+| **Gemini 4 Neon (XHigh)** | run-3 | Antigravity CLI 1.5.13 | `XHigh` | **FAIL** (20/21) | 46.01 | **0.00** | 3154.9s | 537,414 | 15,652,916 | 84,432 | 388,243 | 134,813 B | `929ba90c6d4a...` |
 | **DeepSeek v4.1 Flash (Off)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Off` | **FAIL** (17/21) | 37.05 | **0.00** | 3350.9s | 239,677 | 130,138,752 | 0 | 319,375 | 104,581 B | `e55447f89b61...` |
+| **DeepSeek v4.1 Flash (Off)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Off` | **FAIL** (18/21) | 36.48 | **0.00** | 9445.6s | 1,349,063 | 512,633,600 | 0 | 511,151 | 134,743 B | `8ab3f7060d4c...` |
+| **DeepSeek v4.1 Flash (Low)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Low` | **PASS** (21/21) | 44.78 | **44.78** | 2251.7s | 135,505 | 37,578,496 | 0 | 236,569 | 109,308 B | `1cb008313144...` |
+| **DeepSeek v4.1 Flash (High)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `High` | **PASS** (21/21) | 45.65 | **45.65** | 3308.0s | 160,895 | 64,923,392 | 0 | 289,943 | 104,075 B | `eb62f404bca0...` |
+| **DeepSeek v4.1 Flash (Max)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 45.17 | **45.17** | 3370.6s | 117,229 | 39,866,624 | 0 | 341,560 | 153,361 B | `6e9790ccd50f...` |
 
 - **Waves Held** is the strategy score (mean over five undisclosed seeds), measured even when a shell check failed;
   **Round Score** is the published figure and is 0 for a run that did not ship.

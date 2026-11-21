@@ -45,3 +45,11 @@ Scoring seeds live in the git-ignored `baseline/secret_seeds.json`. Every model 
   - Neon medium run 2 went from 45.69 to 45.65, now scored with its own reading.
 
   `audit_views.py` in the benchmark folder repeats the audit for any deliverable. Every future conformance failure is checked with it before it is counted as the model's fault.
+- **2026-11-21, Last Rampart, during the DeepSeek round.** The runtime check "WebGL Canvas-Only 3D Frame Progression" compares two canvas captures 0.6 s apart and needs them to differ. It took them right after the countdown, at about sim 0.3 s and 0.9 s. In Last Rampart nothing has to move then: wave 1 starts at sim 1.0 s (tick 20) and the camera is fixed. DeepSeek v4.1 Flash high run 1 drew the board correctly but added no idle animation, so both captures were identical and it failed. Its strategy matched the reference.
+
+  The check now waits until the scrubber reaches sim 1.5 s, when wave 1's enemies are walking, and then takes the same two captures (`verify_runtime.py`, `MOTION_FROM`). `baseline/regrade_runtime.py` re-ran only this check on all 29 recorded runs and left every other recorded check as it was:
+  - DeepSeek high run 1: "did not ship" to 45.65 waves held.
+  - Neon high run 2 and Neon xhigh run 3: 45.56 and 46.01 to "did not ship". Both pages show the HUD and dock over an empty background: the board, path, turrets and enemies never appear, at 1920×1080 or at 1280×650, in the grader's Chrome or with GPU (Metal) rendering. Neon high run 1, loaded the same way, shows the full board. The old capture window only passed them because the wave number changed from 0 to 1 at sim 1.0 s.
+  - The other 26 runs are unchanged.
+
+  Neon high's median moves from 45.47 (run 1) to 45.14 (run 3); Neon xhigh's median is unchanged (47.83, run 2).
