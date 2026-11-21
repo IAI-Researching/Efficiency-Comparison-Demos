@@ -39,6 +39,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **DeepSeek v4.1 Flash (Max)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 44.36 | **44.36** | 3709.2s | 240,441 | 74,743,808 | 0 | 390,258 | 127,418 B | `e19ae869c858...` |
 | **Claude Opus 5.5 (Low)** | run-1 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 35.95 | **35.95** | 542.5s | 38 | 1,050,941 | 13,717 | 61,054 | 65,536 B | `fb4e37eef443...` |
 | **Claude Opus 5.5 (Medium)** | run-1 | Claude Code 2.1.330 | `Medium` | **PASS** (21/21) | 45.55 | **45.55** | 2086.3s | 124 | 7,620,170 | 41,444 | 122,401 | 83,383 B | `ade14523e8cc...` |
+| **Claude Opus 5.5 (High)** | run-1 | Claude Code 2.1.330 | `High` | **PASS** (21/21) | 46.65 | **46.65** | 2268.2s | 162 | 12,583,694 | 68,644 | 161,306 | 87,434 B | `bd9cee6fc1b3...` |
 
 - **Waves Held** is the strategy score (mean over five undisclosed seeds), measured even when a shell check failed;
   **Round Score** is the published figure and is 0 for a run that did not ship.
