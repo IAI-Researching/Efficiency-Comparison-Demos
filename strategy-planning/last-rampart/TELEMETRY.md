@@ -32,8 +32,11 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **DeepSeek v4.1 Flash (Off)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Off` | **FAIL** (17/21) | 37.05 | **0.00** | 3350.9s | 239,677 | 130,138,752 | 0 | 319,375 | 104,581 B | `e55447f89b61...` |
 | **DeepSeek v4.1 Flash (Off)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Off` | **FAIL** (18/21) | 36.48 | **0.00** | 9445.6s | 1,349,063 | 512,633,600 | 0 | 511,151 | 134,743 B | `8ab3f7060d4c...` |
 | **DeepSeek v4.1 Flash (Low)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Low` | **PASS** (21/21) | 44.78 | **44.78** | 2251.7s | 135,505 | 37,578,496 | 0 | 236,569 | 109,308 B | `1cb008313144...` |
+| **DeepSeek v4.1 Flash (Low)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Low` | **PASS** (21/21) | 43.69 | **43.69** | 2622.2s | 127,152 | 48,361,728 | 0 | 315,364 | 111,330 B | `b11ee4f8a213...` |
 | **DeepSeek v4.1 Flash (High)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `High` | **PASS** (21/21) | 45.65 | **45.65** | 3308.0s | 160,895 | 64,923,392 | 0 | 289,943 | 104,075 B | `eb62f404bca0...` |
+| **DeepSeek v4.1 Flash (High)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `High` | **PASS** (21/21) | 43.89 | **43.89** | 2630.7s | 101,202 | 45,787,904 | 0 | 287,725 | 108,780 B | `612eb7908e1f...` |
 | **DeepSeek v4.1 Flash (Max)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 45.17 | **45.17** | 3370.6s | 117,229 | 39,866,624 | 0 | 341,560 | 153,361 B | `6e9790ccd50f...` |
+| **DeepSeek v4.1 Flash (Max)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 44.36 | **44.36** | 3709.2s | 240,441 | 74,743,808 | 0 | 390,258 | 127,418 B | `e19ae869c858...` |
 
 - **Waves Held** is the strategy score (mean over five undisclosed seeds), measured even when a shell check failed;
   **Round Score** is the published figure and is 0 for a run that did not ship.

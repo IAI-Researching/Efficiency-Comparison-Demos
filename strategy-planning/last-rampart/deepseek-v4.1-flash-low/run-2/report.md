@@ -1,0 +1,22 @@
+# Benchmark Execution Report: DeepSeek v4.1 Flash (Low), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `DeepSeek CLI 0.2.2-rc.5`
+- **Model ID**: `deepseek-flash`
+- **Reasoning Effort**: `Low`
+- **Deliverable**: `index.html`
+- **Code Size**: 111,330 bytes | 2,748 LOC
+- **SHA-256**: `b11ee4f8a21302262e60cbc587b494536639c1a4845b6c6cd513cc690ca28256`
+- **Wall-Clock Duration**: 2622.16s
+- **Agent Turns / Steps**: 217
+- **Tool Calls**: 254
+- **Input Tokens (Uncached)**: 127,152
+- **Cached Read Tokens**: 48,361,728
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 0
+- **Output Tokens**: 315,364
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 43.69 waves held (mean of five undisclosed seeds: 44.93, 42.33, 43.03, 42.33, 45.83)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 43.69 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
