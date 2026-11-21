@@ -4,9 +4,9 @@ Efficiency-Comparison-Demos measures **what extra reasoning effort buys**: one m
 
 ## What a round is
 
-- **One model, one harness, one harness version.** Four effort levels: `low`, `medium`, `high`, `xhigh`. Only the effort flag changes between runs; the prompt is byte-identical, and the model is never told its effort level.
-- **Three runs per effort level** (12 runs in all), executed one at a time, with levels interleaved (`low, medium, high, xhigh`, then repeat) so that slow drift in the provider's service does not line up with one level.
-- **The video shows each level's median run** by strategy score. All 12 runs are published.
+- **One model, one harness, one harness version.** Four effort levels: the model's four lowest settings. If it has only four, that is all of them; otherwise its top setting is left out (GPT 6.2 Sol and Gemini 4 Neon: `low`, `medium`, `high`, `xhigh`; DeepSeek v4.1 Flash: `off`, `low`, `high`, `max`). Only the effort flag changes between runs; the prompt is byte-identical, and the model is never told its effort level.
+- **Three runs per effort level** (12 runs in all), executed one at a time, with levels interleaved (lowest to highest, then repeat) so that slow drift in the provider's service does not line up with one level.
+- **The video shows each level's median run** by round score, where a build that did not ship scores 0 (so a failed run is the median only if two of the level's three runs fail). All 12 runs are published.
 
 ## Results are scores, not just pass/fail
 
