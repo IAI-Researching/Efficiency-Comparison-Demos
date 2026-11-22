@@ -1,0 +1,22 @@
+# Benchmark Execution Report: Gemini 4 Hydrogen (XHigh), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Antigravity CLI 1.5.14`
+- **Model ID**: `gemini-4-hydrogen-xhigh`
+- **Reasoning Effort**: `Xhigh`
+- **Deliverable**: `index.html`
+- **Code Size**: 115,074 bytes | 3,154 LOC
+- **SHA-256**: `ed8fa7cfb1be35afe2d1e82ec2eff4b3b0fd96d015292eda8de3e18681edc4f2`
+- **Wall-Clock Duration**: 1402.69s
+- **Agent Turns / Steps**: 51
+- **Tool Calls**: 84
+- **Input Tokens (Uncached)**: 377,961
+- **Cached Read Tokens**: 9,285,164
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 78,224
+- **Output Tokens**: 274,316
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 44.01 waves held (mean of five undisclosed seeds: 44.83, 43.23, 46.33, 42.63, 43.05)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 44.01 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
