@@ -1,0 +1,22 @@
+# Benchmark Execution Report: Claude Opus 5.5 (Low), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Claude Code 2.1.330`
+- **Model ID**: `claude-opus-5-5`
+- **Reasoning Effort**: `Low`
+- **Deliverable**: `index.html`
+- **Code Size**: 67,178 bytes | 1,206 LOC
+- **SHA-256**: `4b3ae275743d25cb417e6b5398a71e3793e72ff630d2dd931576ad0523005bd5`
+- **Wall-Clock Duration**: 694.09s
+- **Agent Turns / Steps**: 30
+- **Tool Calls**: 29
+- **Input Tokens (Uncached)**: 54
+- **Cached Read Tokens**: 1,639,937
+- **Cache Creation Tokens**: 95,622
+- **Thinking / Reasoning Tokens**: 15,487
+- **Output Tokens**: 65,921
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 42.93 waves held (mean of five undisclosed seeds: 44.53, 42.48, 44.33, 42.68, 40.65)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 42.93 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
