@@ -1,0 +1,24 @@
+# Benchmark Execution Report: Gemini 4 Hydrogen (XHigh), run 3
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Antigravity CLI 1.5.14`
+- **Model ID**: `gemini-4-hydrogen-xhigh`
+- **Reasoning Effort**: `Xhigh`
+- **Deliverable**: `index.html`
+- **Code Size**: 104,171 bytes | 2,940 LOC
+- **SHA-256**: `a6310579d17956ea4edfedc058462c33a2154c8e0c1f8549cee02dba49453815`
+- **Wall-Clock Duration**: 1437.06s
+- **Agent Turns / Steps**: 59
+- **Tool Calls**: 59
+- **Input Tokens (Uncached)**: 412,038
+- **Cached Read Tokens**: 9,669,156
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 63,449
+- **Output Tokens**: 296,840
+- **Verification**: FAIL (95.2% — 20/21 checks)
+- **Strategy Score**: 46.0 waves held (mean of five undisclosed seeds: 46.13, 43.58, 46.83, 47.78, 45.70)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=d6eed0df1d78a793, backward=b82e92125212f5f6, freshReload=d6eed0df1d78a793, endClamp=100/100, endedCanvasFrozen=True
