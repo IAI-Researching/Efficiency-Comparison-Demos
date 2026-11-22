@@ -40,7 +40,9 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Claude Opus 5.5 (Low)** | run-1 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 35.95 | **35.95** | 542.5s | 38 | 1,050,941 | 13,717 | 61,054 | 65,536 B | `fb4e37eef443...` |
 | **Claude Opus 5.5 (Low)** | run-2 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 42.93 | **42.93** | 694.1s | 54 | 1,639,937 | 15,487 | 65,921 | 67,178 B | `4b3ae275743d...` |
 | **Claude Opus 5.5 (Medium)** | run-1 | Claude Code 2.1.330 | `Medium` | **PASS** (21/21) | 45.55 | **45.55** | 2086.3s | 124 | 7,620,170 | 41,444 | 122,401 | 83,383 B | `ade14523e8cc...` |
+| **Claude Opus 5.5 (Medium)** | run-2 | Claude Code 2.1.330 | `Medium` | **PASS** (21/21) | 44.70 | **44.70** | 1601.0s | 138 | 9,198,849 | 43,249 | 121,804 | 79,777 B | `caff5243a6ff...` |
 | **Claude Opus 5.5 (High)** | run-1 | Claude Code 2.1.330 | `High` | **PASS** (21/21) | 46.65 | **46.65** | 2268.2s | 162 | 12,583,694 | 68,644 | 161,306 | 87,434 B | `bd9cee6fc1b3...` |
+| **Claude Opus 5.5 (High)** | run-2 | Claude Code 2.1.330 | `High` | **PASS** (21/21) | 47.09 | **47.09** | 2932.0s | 222 | 22,001,135 | 90,267 | 202,973 | 105,062 B | `38c9c4cc6736...` |
 | **Claude Opus 5.5 (XHigh)** | run-1 | Claude Code 2.1.330 | `XHigh` | **PASS** (21/21) | 45.92 | **45.92** | 2634.4s | 162 | 15,616,786 | 107,442 | 227,842 | 104,845 B | `f47c9c0317d1...` |
 
 - **Waves Held** is the strategy score (mean over five undisclosed seeds), measured even when a shell check failed;
