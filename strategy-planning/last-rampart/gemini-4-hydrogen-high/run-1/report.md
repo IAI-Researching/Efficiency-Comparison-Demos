@@ -1,0 +1,30 @@
+# Benchmark Execution Report: Gemini 4 Hydrogen (High), run 1
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Antigravity CLI 1.5.14`
+- **Model ID**: `gemini-4-hydrogen-high`
+- **Reasoning Effort**: `High`
+- **Deliverable**: `index.html`
+- **Code Size**: 104,373 bytes | 2,846 LOC
+- **SHA-256**: `78c607bcf859c808a5aaa4e3022e360761393dd08ac32cfb37c3f3e799c64422`
+- **Wall-Clock Duration**: 614.52s
+- **Agent Turns / Steps**: 31
+- **Tool Calls**: 32
+- **Input Tokens (Uncached)**: 207,241
+- **Cached Read Tokens**: 2,488,040
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 26,483
+- **Output Tokens**: 141,133
+- **Verification**: FAIL (66.7% — 14/21 checks)
+- **Strategy Score**: 40.58 waves held (mean of five undisclosed seeds: 41.23, 41.33, 40.33, 40.53, 39.48)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] WebGL Stage, Draw Calls & Three.js r128 Verified`: THREE r128, glStats={'contextsCreated': 1, 'drawCalls': 0, 'clears': 0}, canvases=1, rect={'x': 0, 'y': 0, 'w': 1920, 'h': 1080}
+  - `[Runtime] 3.0s Countdown Sequence (3->2->1->Hidden) Verified`: observedDigits=['3'], hiddenAfter3s=False, font=96px, centered=True
+  - `[Runtime] WebGL Canvas-Only 3D Frame Progression & Scrubber Advance`: canvasHashes=(c558640a4546 -> c558640a4546), drawCalls=(0 -> 0), scrubber=(0.000 -> 0.000)
+  - `[Runtime] Pause/Resume Canvas Freeze & 2.0x Playback Rate Verified`: pausedScrub=(0 -> 0), pausedCanvasFrozen=True, observedRate2x=0.00x
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=c558640a4546bd7c, backward=c558640a4546bd7c, freshReload=c558640a4546bd7c, endClamp=99.92/100, endedCanvasFrozen=True
+  - `[Runtime] Silent 1.0s Re-Fire Hold & Auto-Restart Verified`: reset=30, at0.82s=30, at1.27s=30, silent=False
+  - `[Runtime] Full-Lifecycle Zero JS, Worker, Console & WebGL Errors`: exceptions=['Uncaught', 'Uncaught'], errors=[], cdpAsync=[]
