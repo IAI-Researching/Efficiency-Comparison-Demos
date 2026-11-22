@@ -1,0 +1,25 @@
+# Benchmark Execution Report: Gemini 4 Hydrogen (Low), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Antigravity CLI 1.5.14`
+- **Model ID**: `gemini-4-hydrogen-low`
+- **Reasoning Effort**: `Low`
+- **Deliverable**: `index.html`
+- **Code Size**: 54,311 bytes | 1,627 LOC
+- **SHA-256**: `15736f89045b4cab007f8826a4aa2f157aaba1938b77682228a734aa3f98affa`
+- **Wall-Clock Duration**: 176.44s
+- **Agent Turns / Steps**: 4
+- **Tool Calls**: 3
+- **Input Tokens (Uncached)**: 50,014
+- **Cached Read Tokens**: 56,116
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 4,396
+- **Output Tokens**: 25,836
+- **Verification**: FAIL (90.5% — 19/21 checks)
+- **Strategy Score**: 24.97 waves held (mean of five undisclosed seeds: 30.58, 24.05, 24.98, 22.38, 22.85)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=1821704eeae3b1ab, backward=1821704eeae3b1ab, freshReload=1821704eeae3b1ab, endClamp=100/100, endedCanvasFrozen=True
+  - `[Runtime] Full-Lifecycle Zero JS, Worker, Console & WebGL Errors`: exceptions=['Uncaught', 'Uncaught'], errors=[], cdpAsync=[]

@@ -38,6 +38,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **DeepSeek v4.1 Flash (Max)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 45.17 | **45.17** | 3370.6s | 117,229 | 39,866,624 | 0 | 341,560 | 153,361 B | `6e9790ccd50f...` |
 | **DeepSeek v4.1 Flash (Max)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 44.36 | **44.36** | 3709.2s | 240,441 | 74,743,808 | 0 | 390,258 | 127,418 B | `e19ae869c858...` |
 | **Gemini 4 Hydrogen (Low)** | run-1 | Antigravity CLI 1.5.14 | `Low` | **PASS** (21/21) | 24.04 | **24.04** | 308.4s | 112,205 | 568,969 | 5,893 | 70,758 | 56,456 B | `02667d1feab5...` |
+| **Gemini 4 Hydrogen (Low)** | run-2 | Antigravity CLI 1.5.14 | `Low` | **FAIL** (19/21) | 24.97 | **0.00** | 176.4s | 50,014 | 56,116 | 4,396 | 25,836 | 54,311 B | `15736f89045b...` |
 | **Gemini 4 Hydrogen (Medium)** | run-1 | Antigravity CLI 1.5.14 | `Medium` | **PASS** (21/21) | 36.14 | **36.14** | 351.9s | 128,809 | 619,333 | 10,966 | 88,495 | 75,053 B | `2ff67b964c80...` |
 | **Gemini 4 Hydrogen (High)** | run-1 | Antigravity CLI 1.5.14 | `High` | **FAIL** (14/21) | 40.58 | **0.00** | 614.5s | 207,241 | 2,488,040 | 26,483 | 141,133 | 104,373 B | `78c607bcf859...` |
 | **Gemini 4 Hydrogen (XHigh)** | run-1 | Antigravity CLI 1.5.14 | `XHigh` | **PASS** (21/21) | 45.45 | **45.45** | 29778.3s | 585,087 | 8,406,026 | 51,325 | 215,296 | 105,300 B | `7b7015e1c06c...` |
