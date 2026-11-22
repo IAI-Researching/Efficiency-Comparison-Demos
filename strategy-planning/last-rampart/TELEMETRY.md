@@ -37,6 +37,8 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **DeepSeek v4.1 Flash (High)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `High` | **PASS** (21/21) | 43.89 | **43.89** | 2630.7s | 101,202 | 45,787,904 | 0 | 287,725 | 108,780 B | `612eb7908e1f...` |
 | **DeepSeek v4.1 Flash (Max)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 45.17 | **45.17** | 3370.6s | 117,229 | 39,866,624 | 0 | 341,560 | 153,361 B | `6e9790ccd50f...` |
 | **DeepSeek v4.1 Flash (Max)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 44.36 | **44.36** | 3709.2s | 240,441 | 74,743,808 | 0 | 390,258 | 127,418 B | `e19ae869c858...` |
+| **Gemini 4 Hydrogen (Low)** | run-1 | Antigravity CLI 1.5.14 | `Low` | **PASS** (21/21) | 24.04 | **24.04** | 308.4s | 112,205 | 568,969 | 5,893 | 70,758 | 56,456 B | `02667d1feab5...` |
+| **Gemini 4 Hydrogen (Medium)** | run-1 | Antigravity CLI 1.5.14 | `Medium` | **PASS** (21/21) | 36.14 | **36.14** | 351.9s | 128,809 | 619,333 | 10,966 | 88,495 | 75,053 B | `2ff67b964c80...` |
 | **Claude Opus 5.5 (Low)** | run-1 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 35.95 | **35.95** | 542.5s | 38 | 1,050,941 | 13,717 | 61,054 | 65,536 B | `fb4e37eef443...` |
 | **Claude Opus 5.5 (Low)** | run-2 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 42.93 | **42.93** | 694.1s | 54 | 1,639,937 | 15,487 | 65,921 | 67,178 B | `4b3ae275743d...` |
 | **Claude Opus 5.5 (Low)** | run-3 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 41.29 | **41.29** | 694.0s | 40 | 1,160,743 | 12,974 | 63,470 | 65,316 B | `d1ba05f38cd2...` |
