@@ -42,6 +42,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Gemini 4 Hydrogen (Medium)** | run-1 | Antigravity CLI 1.5.14 | `Medium` | **PASS** (21/21) | 36.14 | **36.14** | 351.9s | 128,809 | 619,333 | 10,966 | 88,495 | 75,053 B | `2ff67b964c80...` |
 | **Gemini 4 Hydrogen (Medium)** | run-2 | Antigravity CLI 1.5.14 | `Medium` | **PASS** (21/21) | 37.82 | **37.82** | 509.6s | 169,331 | 1,351,713 | 12,772 | 107,858 | 78,580 B | `17acb69b67c1...` |
 | **Gemini 4 Hydrogen (High)** | run-1 | Antigravity CLI 1.5.14 | `High` | **FAIL** (14/21) | 40.58 | **0.00** | 614.5s | 207,241 | 2,488,040 | 26,483 | 141,133 | 104,373 B | `78c607bcf859...` |
+| **Gemini 4 Hydrogen (High)** | run-2 | Antigravity CLI 1.5.14 | `High` | **PASS** (21/21) | 43.91 | **43.91** | 594.2s | 178,047 | 1,826,286 | 23,111 | 120,893 | 101,446 B | `2ccee20d8a84...` |
 | **Gemini 4 Hydrogen (XHigh)** | run-1 | Antigravity CLI 1.5.14 | `XHigh` | **PASS** (21/21) | 45.45 | **45.45** | 29778.3s | 585,087 | 8,406,026 | 51,325 | 215,296 | 105,300 B | `7b7015e1c06c...` |
 | **Claude Opus 5.5 (Low)** | run-1 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 35.95 | **35.95** | 542.5s | 38 | 1,050,941 | 13,717 | 61,054 | 65,536 B | `fb4e37eef443...` |
 | **Claude Opus 5.5 (Low)** | run-2 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 42.93 | **42.93** | 694.1s | 54 | 1,639,937 | 15,487 | 65,921 | 67,178 B | `4b3ae275743d...` |
