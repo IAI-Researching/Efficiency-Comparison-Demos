@@ -38,8 +38,10 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **DeepSeek v4.1 Flash (Max)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 45.17 | **45.17** | 3370.6s | 117,229 | 39,866,624 | 0 | 341,560 | 153,361 B | `6e9790ccd50f...` |
 | **DeepSeek v4.1 Flash (Max)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Max` | **PASS** (21/21) | 44.36 | **44.36** | 3709.2s | 240,441 | 74,743,808 | 0 | 390,258 | 127,418 B | `e19ae869c858...` |
 | **Claude Opus 5.5 (Low)** | run-1 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 35.95 | **35.95** | 542.5s | 38 | 1,050,941 | 13,717 | 61,054 | 65,536 B | `fb4e37eef443...` |
+| **Claude Opus 5.5 (Low)** | run-2 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 42.93 | **42.93** | 694.1s | 54 | 1,639,937 | 15,487 | 65,921 | 67,178 B | `4b3ae275743d...` |
 | **Claude Opus 5.5 (Medium)** | run-1 | Claude Code 2.1.330 | `Medium` | **PASS** (21/21) | 45.55 | **45.55** | 2086.3s | 124 | 7,620,170 | 41,444 | 122,401 | 83,383 B | `ade14523e8cc...` |
 | **Claude Opus 5.5 (High)** | run-1 | Claude Code 2.1.330 | `High` | **PASS** (21/21) | 46.65 | **46.65** | 2268.2s | 162 | 12,583,694 | 68,644 | 161,306 | 87,434 B | `bd9cee6fc1b3...` |
+| **Claude Opus 5.5 (XHigh)** | run-1 | Claude Code 2.1.330 | `XHigh` | **PASS** (21/21) | 45.92 | **45.92** | 2634.4s | 162 | 15,616,786 | 107,442 | 227,842 | 104,845 B | `f47c9c0317d1...` |
 
 - **Waves Held** is the strategy score (mean over five undisclosed seeds), measured even when a shell check failed;
   **Round Score** is the published figure and is 0 for a run that did not ship.
