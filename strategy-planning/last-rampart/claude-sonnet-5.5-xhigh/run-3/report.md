@@ -1,0 +1,25 @@
+# Benchmark Execution Report: Claude Sonnet 5.5 (XHigh), run 3
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Claude Code 2.1.330`
+- **Model ID**: `claude-sonnet-5-5`
+- **Reasoning Effort**: `Xhigh`
+- **Deliverable**: `index.html`
+- **Code Size**: 112,095 bytes | 2,116 LOC
+- **SHA-256**: `79dd34014fa980736091b126d5e20360c596131e09a384779607d67a5523b95d`
+- **Wall-Clock Duration**: 4276.93s
+- **Agent Turns / Steps**: 181
+- **Tool Calls**: 180
+- **Input Tokens (Uncached)**: 254
+- **Cached Read Tokens**: 34,255,170
+- **Cache Creation Tokens**: 404,882
+- **Thinking / Reasoning Tokens**: 207,386
+- **Output Tokens**: 334,220
+- **Verification**: FAIL (90.5% — 19/21 checks)
+- **Strategy Score**: 46.77 waves held (mean of five undisclosed seeds: 46.40, 44.98, 47.98, 47.43, 47.08)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `Strategy grader: Rules conformance, seed 42`: reference={'score': 47.63, 'fallTick': 1925, 'hash': '15273d93'} model={'score': 47.63, 'fallTick': 1925, 'hash': 'fb4c9aab'}
+  - `Strategy grader: Rules conformance, seed undisclosed`: reference={'score': 45.23, 'fallTick': 1829, 'hash': '8f3f970f'} model={'score': 45.23, 'fallTick': 1829, 'hash': '9a560db5'}

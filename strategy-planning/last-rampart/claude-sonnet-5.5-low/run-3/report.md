@@ -5,18 +5,21 @@
 - **Model ID**: `claude-sonnet-5-5`
 - **Reasoning Effort**: `Low`
 - **Deliverable**: `index.html`
-- **Code Size**: 57,931 bytes | 672 LOC
-- **SHA-256**: `5387bb13627ba6b8a42c31a36415dd09f3262091e580d806f988c44c52ad387a`
-- **Wall-Clock Duration**: 526.18s
-- **Agent Turns / Steps**: 21
-- **Tool Calls**: 20
-- **Input Tokens (Uncached)**: 34
-- **Cached Read Tokens**: 1,112,180
-- **Cache Creation Tokens**: 93,554
-- **Thinking / Reasoning Tokens**: 28,424
-- **Output Tokens**: 72,038
-- **Verification**: PASS (100.0% — 21/21 checks)
-- **Strategy Score**: 26.04 waves held (mean of five undisclosed seeds: 28.03, 25.68, 26.03, 26.73, 23.75)
+- **Code Size**: 57,023 bytes | 1,033 LOC
+- **SHA-256**: `c935619f8f7fe15f22d0ab8ed82fd7d6f3869f8a403ee70fada9ff4a1389e074`
+- **Wall-Clock Duration**: 583.68s
+- **Agent Turns / Steps**: 34
+- **Tool Calls**: 33
+- **Input Tokens (Uncached)**: 58
+- **Cached Read Tokens**: 1,877,770
+- **Cache Creation Tokens**: 98,349
+- **Thinking / Reasoning Tokens**: 27,773
+- **Output Tokens**: 71,812
+- **Verification**: FAIL (90.5% — 19/21 checks)
+- **Strategy Score**: 29.2 waves held (mean of five undisclosed seeds: 28.33, 27.13, 31.38, 27.75, 31.43)
 - **Self-check Vectors**: A match, B match
-- **Round Score**: 26.04 (0 when the run did not ship)
+- **Round Score**: 0.0 (0 when the run did not ship)
 - **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `Strategy grader: Rules conformance, seed 42`: reference={'score': 30.78, 'fallTick': 1251, 'hash': '38ea63cc'} model={'score': 30.78, 'fallTick': 1251, 'hash': '16469b98'}
+  - `Strategy grader: Rules conformance, seed undisclosed`: reference={'score': 33.92, 'fallTick': 1377, 'hash': 'cdc9ee36'} model={'score': 33.92, 'fallTick': 1377, 'hash': 'ccd011b6'}
