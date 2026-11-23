@@ -1,0 +1,22 @@
+# Benchmark Execution Report: Claude Sonnet 5.5 (Low), run 3
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Claude Code 2.1.330`
+- **Model ID**: `claude-sonnet-5-5`
+- **Reasoning Effort**: `Low`
+- **Deliverable**: `index.html`
+- **Code Size**: 57,931 bytes | 672 LOC
+- **SHA-256**: `5387bb13627ba6b8a42c31a36415dd09f3262091e580d806f988c44c52ad387a`
+- **Wall-Clock Duration**: 526.18s
+- **Agent Turns / Steps**: 21
+- **Tool Calls**: 20
+- **Input Tokens (Uncached)**: 34
+- **Cached Read Tokens**: 1,112,180
+- **Cache Creation Tokens**: 93,554
+- **Thinking / Reasoning Tokens**: 28,424
+- **Output Tokens**: 72,038
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 26.04 waves held (mean of five undisclosed seeds: 28.03, 25.68, 26.03, 26.73, 23.75)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 26.04 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
