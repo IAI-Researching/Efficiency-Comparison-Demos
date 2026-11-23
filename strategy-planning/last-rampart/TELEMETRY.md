@@ -73,6 +73,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Claude Sonnet 5.5 (XHigh)** | run-1 | Claude Code 2.1.330 | `XHigh` | **PASS** (21/21) | 46.26 | **46.26** | 5362.1s | 298 | 44,615,064 | 196,603 | 350,676 | 108,323 B | `33088a2b36d7...` |
 | **Claude Sonnet 5.5 (XHigh)** | run-2 | Claude Code 2.1.330 | `XHigh` | **PASS** (21/21) | 46.48 | **46.48** | 6226.8s | 292 | 45,607,910 | 204,183 | 355,282 | 105,150 B | `0ec7b6166e4a...` |
 | **Claude Sonnet 5.5 (XHigh)** | run-3 | Claude Code 2.1.330 | `XHigh` | **FAIL** (19/21) | 46.77 | **0.00** | 4276.9s | 254 | 34,255,170 | 207,386 | 334,220 | 112,095 B | `79dd34014fa9...` |
+| **Claude Fable 5.2 (Low)** | run-1 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 46.04 | **46.04** | 1757.0s | 82 | 5,518,848 | 54,683 | 133,953 | 76,758 B | `be5639e970e0...` |
 
 - **Waves Held** is the strategy score (mean over five undisclosed seeds), measured even when a shell check failed;
   **Round Score** is the published figure and is 0 for a run that did not ship.
