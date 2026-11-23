@@ -64,6 +64,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Claude Sonnet 5.5 (Low)** | run-1 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 38.44 | **38.44** | 650.6s | 30 | 948,605 | 22,912 | 66,457 | 51,318 B | `729db49c5b4a...` |
 | **Claude Sonnet 5.5 (Low)** | run-2 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 33.47 | **33.47** | 758.5s | 48 | 2,154,157 | 39,542 | 90,089 | 64,296 B | `e4e02970acf4...` |
 | **Claude Sonnet 5.5 (Medium)** | run-1 | Claude Code 2.1.330 | `Medium` | **PASS** (21/21) | 42.83 | **42.83** | 1319.6s | 134 | 9,009,016 | 61,680 | 135,242 | 77,445 B | `17368b6a7fbd...` |
+| **Claude Sonnet 5.5 (Medium)** | run-2 | Claude Code 2.1.330 | `Medium` | **PASS** (21/21) | 45.28 | **45.28** | 1011.6s | 56 | 2,886,634 | 49,997 | 119,223 | 73,377 B | `c5425eabe3ad...` |
 | **Claude Sonnet 5.5 (High)** | run-1 | Claude Code 2.1.330 | `High` | **PASS** (21/21) | 45.54 | **45.54** | 5863.7s | 220 | 21,555,702 | 96,703 | 196,883 | 96,280 B | `906a12f7a86d...` |
 | **Claude Sonnet 5.5 (XHigh)** | run-1 | Claude Code 2.1.330 | `XHigh` | **PASS** (21/21) | 46.26 | **46.26** | 5362.1s | 298 | 44,615,064 | 196,603 | 350,676 | 108,323 B | `33088a2b36d7...` |
 
