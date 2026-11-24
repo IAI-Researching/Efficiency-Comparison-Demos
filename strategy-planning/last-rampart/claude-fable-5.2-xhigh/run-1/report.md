@@ -1,0 +1,22 @@
+# Benchmark Execution Report: Claude Fable 5.2 (XHigh), run 1
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Claude Code 2.1.330`
+- **Model ID**: `claude-fable-5-2`
+- **Reasoning Effort**: `Xhigh`
+- **Deliverable**: `index.html`
+- **Code Size**: 130,050 bytes | 2,328 LOC
+- **SHA-256**: `15461fcbc90cf49db03b15ec1cec04df783a32c494676ccf439a91eb556e156b`
+- **Wall-Clock Duration**: 5670.67s
+- **Agent Turns / Steps**: 127
+- **Tool Calls**: 124
+- **Input Tokens (Uncached)**: 208
+- **Cached Read Tokens**: 35,694,053
+- **Cache Creation Tokens**: 541,334
+- **Thinking / Reasoning Tokens**: 250,046
+- **Output Tokens**: 417,237
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 47.64 waves held (mean of five undisclosed seeds: 47.63, 44.93, 48.55, 48.55, 48.53)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 47.64 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)

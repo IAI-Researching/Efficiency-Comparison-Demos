@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Last Rampart</title>
+<style>
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #161922 0%, #090a0f 100%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#stage {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+#countdown {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 50;
+  pointer-events: none;
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.35);
+  font-variant-numeric: tabular-nums;
+}
+
+#dock {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: 536px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 14px;
+  background: rgba(15, 17, 23, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+#dock button {
+  font-family: inherit;
+  line-height: 1;
+  margin: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.dock-sep {
+  width: 1px;
+  height: 18px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#btn-refire {
+  width: 78px;
+  height: 28px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+#btn-refire:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+#btn-toggle {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  color: #ffffff;
+  cursor: pointer;
+}
+#btn-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+#speed-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.speed-pill {
+  width: 42px;
+  height: 24px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.speed-pill:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+.speed-pill.is-active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+#scrubber {
+  width: 157px;
+  height: 4px;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+#scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+#scrubber::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div id="countdown" aria-hidden="true">3</div>
+
+<div id="dock" role="toolbar" aria-label="Simulation Controls">
+  <button id="btn-refire" type="button" aria-label="Re-fire" title="Re-fire">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+    </svg>
+    <span>Re-fire</span>
+  </button>
+  <span class="dock-sep" aria-hidden="true"></span>
+  <button id="btn-toggle" type="button" aria-label="Pause" title="Play / Pause">
+    <svg id="icon-pause" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="4" width="4" height="16" rx="1"/>
+      <rect x="14" y="4" width="4" height="16" rx="1"/>
+    </svg>
+    <svg id="icon-play" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="display:none;">
+      <path d="M8 5v14l11-7z"/>
+    </svg>
+  </button>
+  <span class="dock-sep" aria-hidden="true"></span>
+  <div id="speed-group" role="radiogroup" aria-label="Playback Speed">
+    <button class="speed-pill" type="button" role="radio" aria-checked="false" data-speed="0.25">0.25×</button>
+    <button class="speed-pill" type="button" role="radio" aria-checked="false" data-speed="0.5">0.5×</button>
+    <button class="speed-pill is-active" type="button" role="radio" aria-checked="true" data-speed="1.0">1.0×</button>
+    <button class="speed-pill" type="button" role="radio" aria-checked="false" data-speed="2.0">2.0×</button>
+  </div>
+  <span class="dock-sep" aria-hidden="true"></span>
+  <input id="scrubber" type="range" min="0" max="100" step="0.001" value="0" aria-label="Timeline Scrubber">
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script id="rampart-strategy">
+function createStrategy() {
+  "use strict";
+  var D = {"order":"b13 c0 k10 c7 c4 c3 c6 c2 c1 u3 u0 c9 u1 k5 u2 k15 b11 c8 u7 b14 u4 u5 u2 u10 u6 u0 u10 u8 u1 u7 u4 u3 b12 u5 u6 u12 u15 u9 u15 u9 u14 u11 u14 u11 u13 u13 u12 u8","resMax":768.62,"resRate":113.709,"resW0":2.548,"resEnd":5.906,"sRunner":1.8,"sGrunt":0.375,"sBrute":0.485,"sSplitter":0.616,"sMender":8.681,"sSplitling":1.512,"sUrg":1.372,"sKill":0.191,"lRunner":30,"lGrunt":5.712,"lBrute":1.593,"lSplitter":1.498,"lMender":0.341,"lSplitling":1.566,"lUrg":0,"lFrac":0.726,"bRunner":11.353,"bGrunt":1.425,"bBrute":1.404,"bSplitter":0.554,"bMender":0.034,"bSplitling":0.161,"bWisp":11.487,"bUrg":1.024,"bFrac":0,"fRunner":4.239,"fGrunt":0.304,"fBrute":7.736,"fSplitter":0.151,"fMender":2.289,"fSplitling":4.154,"fWisp":2.913,"fUrg":1.059,"kUrg":0,"rstMin":7.769,"rstReserve":0,"rstWave":37.567,"rstLance":1,"spR":459.427,"spPen":3.858,"look":1,"lookWave":4,"lookH":400,"lookExtra":100,"lookMargin":2,"lookRounds":2,"lookTypes":"ckblf","lookWork":40000000.0,"modes":2,"modeUrgMul":4,"modeUrgAdd":2,"bank":1,"bankFrom":3,"bankUntil":30,"bankCap":600,"bankTheta":0.8,"bankH":400,"hDisc":0,"sFin":0,"bFin":0,"mKill":0,"lookRst":1,"lookBuy":1,"lookSafeUntil":32};
+  var P = D;
+  var DBG = null;
+
+  // ---------------------------------------------------------------- rules tables
+  var TCH = { b: "bolt", c: "cannon", f: "frost", l: "lance", k: "flak" };
+  var TUR = {
+    bolt:   { cost: 50,  dmg: [26, 41, 65],    period: 8,  range: 300, splash: 0,  slow: 0,  pierce: 0, ground: 1, air: 1 },
+    cannon: { cost: 90,  dmg: [60, 96, 153],   period: 24, range: 260, splash: 90, slow: 0,  pierce: 0, ground: 1, air: 0 },
+    frost:  { cost: 70,  dmg: [10, 16, 25],    period: 12, range: 240, splash: 0,  slow: 30, pierce: 0, ground: 1, air: 1 },
+    lance:  { cost: 120, dmg: [180, 288, 460], period: 36, range: 360, splash: 0,  slow: 0,  pierce: 1, ground: 1, air: 0 },
+    flak:   { cost: 80,  dmg: [40, 64, 102],   period: 10, range: 320, splash: 70, slow: 0,  pierce: 0, ground: 0, air: 1 }
+  };
+  var ENE = {
+    grunt:     { hp: 60,  speed: 10, bounty: 4, leak: 1, air: 0 },
+    runner:    { hp: 40,  speed: 20, bounty: 4, leak: 1, air: 0 },
+    wisp:      { hp: 50,  speed: 12, bounty: 6, leak: 2, air: 1 },
+    brute:     { hp: 150, speed: 6,  bounty: 9, leak: 3, air: 0 },
+    splitter:  { hp: 90,  speed: 8,  bounty: 6, leak: 2, air: 0 },
+    mender:    { hp: 70,  speed: 8,  bounty: 7, leak: 2, air: 0 },
+    splitling: { hp: 0,   speed: 12, bounty: 1, leak: 1, air: 0 }
+  };
+  var SLOTS = [[3, 3], [5, 5], [7, 4], [7, 8], [9, 9], [10, 5], [11, 8], [13, 8], [14, 5], [15, 2], [16, 7], [17, 4], [19, 8], [20, 10], [22, 9], [3, 7]];
+  var SX = [], SY = [], i0;
+  for (i0 = 0; i0 < 16; i0++) { SX.push(SLOTS[i0][0] * 100 + 50); SY.push(SLOTS[i0][1] * 100 + 50); }
+  function mkRoute(t) {
+    var segs = [], total = 0;
+    for (var i = 0; i + 1 < t.length; i++) {
+      var x0 = t[i][0] * 100 + 50, y0 = t[i][1] * 100 + 50, dx = t[i + 1][0] * 100 + 50 - x0, dy = t[i + 1][1] * 100 + 50 - y0, len = Math.abs(dx) + Math.abs(dy);
+      segs.push({ x: x0, y: y0, ux: dx > 0 ? 1 : dx < 0 ? -1 : 0, uy: dy > 0 ? 1 : dy < 0 ? -1 : 0, start: total, end: total + len });
+      total += len;
+    }
+    return { segs: segs, len: total };
+  }
+  var GROUND = mkRoute([[0, 2], [6, 2], [6, 10], [12, 10], [12, 3], [18, 3], [18, 11], [23, 11]]);
+  var AIR = mkRoute([[0, 6], [21, 6], [21, 11], [23, 11]]);
+  var MULT = [0, 1000];
+  function mult(w) { while (MULT.length <= w) MULT.push(Math.floor(MULT[MULT.length - 1] * 108 / 100)); return MULT[w]; }
+
+  // ---------------------------------------------------------------- targeting policy (works on views and on shadow enemies)
+  var SW = { runner: P.sRunner, grunt: P.sGrunt, brute: P.sBrute, splitter: P.sSplitter, mender: P.sMender, splitling: P.sSplitling, wisp: 1 };
+  var LW = { runner: P.lRunner, grunt: P.lGrunt, brute: P.lBrute, splitter: P.lSplitter, mender: P.lMender, splitling: P.lSplitling, wisp: 1 };
+  var BW = { runner: P.bRunner, grunt: P.bGrunt, brute: P.bBrute, splitter: P.bSplitter, mender: P.bMender, splitling: P.bSplitling, wisp: P.bWisp };
+  var FW = { runner: P.fRunner, grunt: P.fGrunt, brute: P.fBrute, splitter: P.fSplitter, mender: P.fMender, splitling: P.fSplitling, wisp: P.fWisp };
+  var valBuf = [], mode = 0, curM = [];
+  function pick(type, tier, c) {
+    var n = c.length, i, j, best = c[0], bv = -1e300, v, e, d, pf;
+    if (n === 1) return best;
+    if (mode === 2) { for (i = 1; i < n; i++) if (c[i].remaining < best.remaining) best = c[i]; return best; }
+    var um = mode === 1 ? P.modeUrgMul : 1, ua = mode === 1 ? P.modeUrgAdd : 0;
+    var dmg = TUR[type].dmg[tier - 1];
+    if (type === "cannon" || type === "flak") {
+      var isC = type === "cannon", r2 = isC ? 8100 : 4900, urg = (isC ? P.sUrg : P.kUrg) * um + ua, kill = P.sKill * dmg, hD = P.hDisc, fin = P.sFin, nm = curM.length;
+      for (i = 0; i < n; i++) {
+        e = c[i];
+        d = dmg - e.armor; if (d < 1) d = 1;
+        var kb = 0;
+        var healed = 0;
+        if (d >= e.hp) { d = e.hp; kb = kill; if (e.remaining < P.spR && e.type === "splitter") kb = -P.spPen * dmg; else if (e.type === "mender") kb += P.mKill * dmg; }
+        else if (hD > 0 && isC) { for (j = 0; j < nm; j++) { var mm = curM[j]; if (mm.hp > 0) { var qx = mm.x - e.x, qy = mm.y - e.y; if (qx * qx + qy * qy <= 22500) { healed = 1; break; } } } }
+        pf = 1 - e.remaining / (e.air ? 2800 : 4600);
+        valBuf[i] = (d + kb) * (SW[e.type] || 1) * (1 + urg * pf) * (1 + fin * (1 - e.hp / e.maxHp)) * (healed ? 1 - hD : 1);
+      }
+      for (i = 0; i < n; i++) {
+        var a = c[i], ax = a.x, ay = a.y; v = 0;
+        for (j = 0; j < n; j++) {
+          e = c[j];
+          var dx = e.x - ax, dy = e.y - ay;
+          if (dx * dx + dy * dy <= r2) v += valBuf[j];
+        }
+        v = v * 10000 - a.remaining;
+        if (v > bv) { bv = v; best = a; }
+      }
+      return best;
+    }
+    if (type === "lance" || type === "bolt") {
+      var isL = type === "lance", WW = isL ? LW : BW, urg2 = (isL ? P.lUrg : P.bUrg) * um + ua, fr = isL ? P.lFrac : P.bFrac;
+      for (i = 0; i < n; i++) {
+        e = c[i];
+        d = isL ? dmg : dmg - e.armor; if (d < 1) d = 1;
+        var used = d >= e.hp ? e.hp / d : 1;
+        pf = 1 - e.remaining / (e.air ? 2800 : 4600);
+        v = (WW[e.type] || 1) * (1 - fr + fr * used) * (1 + urg2 * pf) * (1 + P.bFin * (1 - e.hp / e.maxHp)) * 1e6 - e.remaining;
+        if (d >= e.hp && e.remaining < P.spR && e.type === "splitter") v -= P.spPen * 1e6;
+        if (v > bv) { bv = v; best = e; }
+      }
+      return best;
+    }
+    for (i = 0; i < n; i++) {
+      e = c[i];
+      pf = 1 - e.remaining / (e.air ? 2800 : 4600);
+      v = (e.slowed ? 0.001 : 1) * (FW[e.type] || 1) * (1 + P.fUrg * pf) * 1e6 - e.remaining;
+      if (v > bv) { bv = v; best = e; }
+    }
+    return best;
+  }
+
+  // ---------------------------------------------------------------- shadow engine (exact mirror of the rules)
+  var S = { tick: 20, gold: 250, baseHp: 10, wave: 0, nextId: 1, en: [], tur: [], q: [], qh: 0, fell: false };
+  for (i0 = 0; i0 < 16; i0++) S.tur.push(null);
+  var known = []; known[1] = ["grunt", "grunt", "grunt", "grunt"];
+  var ok = true, dec = [], dptr = 0;
+
+  function place(e) {
+    var segs = e.air ? AIR.segs : GROUND.segs, p = e.progress, s = segs[segs.length - 1], k;
+    for (k = 0; k < segs.length; k++) if (p < segs[k].end) { s = segs[k]; break; }
+    var d = p - s.start;
+    e.x = s.x + s.ux * d; e.y = s.y + s.uy * d;
+  }
+  function spawnE(St, type, w, maxHp, progress) {
+    var d = ENE[type], len = d.air ? AIR.len : GROUND.len;
+    var e = { id: St.nextId++, type: type, wave: w, hp: maxHp, maxHp: maxHp, progress: progress, remaining: len - progress, age: 0, slow: 0, slowed: 0,
+      armor: type === "grunt" ? Math.floor(w / 4) : type === "brute" ? 6 + w : 0, speed: d.speed, slowSpeed: Math.floor(d.speed * 60 / 100),
+      bounty: d.bounty, leak: d.leak, air: d.air, routeLen: len, x: 0, y: 0, gone: 0, mender: type === "mender" ? 1 : 0 };
+    place(e);
+    St.en.push(e);
+    return e;
+  }
+  function mkTurret(type) { var d = TUR[type]; return { type: type, tier: 1, spent: d.cost, cd: 0, def: d }; }
+  function applyActs(St, acts) {
+    var n = Math.min(acts.length, 32);
+    for (var k = 0; k < n; k++) {
+      var a = acts[k], t = St.tur[a.slot];
+      if (a.op === "build") {
+        if (t || !TUR[a.type] || St.gold < TUR[a.type].cost) continue;
+        St.gold -= TUR[a.type].cost; St.tur[a.slot] = mkTurret(a.type);
+      } else if (a.op === "upgrade") {
+        if (!t || t.tier >= 3) continue;
+        var c = t.def.cost * t.tier;
+        if (St.gold < c) continue;
+        St.gold -= c; t.tier += 1; t.spent += c;
+      } else if (a.op === "sell") {
+        if (!t) continue;
+        St.gold += Math.floor(t.spent * 70 / 100); St.tur[a.slot] = null;
+      }
+    }
+  }
+  function queueWave(St, w, tick) {
+    var cur = known[w], q = St.q, i, j;
+    for (i = 0; i < cur.length; i++) q.push({ tick: tick + 4 * i, wave: w, idx: i, type: cur[i] });
+    for (i = q.length - cur.length; i < q.length; i++) {
+      var it = q[i]; j = i - 1;
+      while (j >= St.qh && (q[j].tick > it.tick || (q[j].tick === it.tick && (q[j].wave > it.wave || (q[j].wave === it.wave && q[j].idx > it.idx))))) { q[j + 1] = q[j]; j--; }
+      q[j + 1] = it;
+    }
+  }
+  // steps 2-6 of one tick; rec (optional) receives [slot, targetId, candidateCount] per shot
+  var work = 0;
+  function simTick(St, tick, rec) {
+    var en = St.en, q = St.q, i, j, e, n;
+    work += en.length + 20;
+    while (St.qh < q.length && q[St.qh].tick <= tick) { var sp = q[St.qh++]; spawnE(St, sp.type, sp.wave, Math.floor(ENE[sp.type].hp * mult(sp.wave) / 1000), 0); }
+    if (St.qh > 256) { St.q = q.slice(St.qh); St.qh = 0; }
+    var leaked = false;
+    n = en.length;
+    for (i = 0; i < n; i++) {
+      e = en[i];
+      e.progress += e.slow > 0 ? e.slowSpeed : e.speed;
+      if (e.progress >= e.routeLen) {
+        St.baseHp -= e.leak; e.gone = 1; leaked = true;
+        if (St.baseHp <= 0) { St.fell = true; break; }
+      } else { e.remaining = e.routeLen - e.progress; place(e); if (St.track && e.progress > St.mx * e.routeLen) St.mx = e.progress / e.routeLen; }
+    }
+    if (leaked) { var keep = []; for (i = 0; i < n; i++) if (!en[i].gone) keep.push(en[i]); en = St.en = keep; n = en.length; }
+    if (St.fell) return;
+    for (i = 0; i < n; i++) {
+      e = en[i];
+      e.age += 1;
+      if (e.mender && e.age % 20 === 0) {
+        var mx = e.x, my = e.y;
+        for (j = 0; j < n; j++) {
+          var o = en[j], hx = o.x - mx, hy = o.y - my;
+          if (hx * hx + hy * hy <= 22500) { o.hp += Math.floor(o.maxHp * 8 / 100); if (o.hp > o.maxHp) o.hp = o.maxHp; }
+        }
+      }
+    }
+    if (P.hDisc > 0) { curM = []; for (i = 0; i < n; i++) if (en[i].mender) curM.push(en[i]); }
+    for (var si = 0; si < 16; si++) {
+      var tur = St.tur[si];
+      if (!tur) continue;
+      if (tur.cd > 0) { tur.cd -= 1; if (tur.cd > 0) continue; }
+      var def = tur.def, rr = def.range + 30 * (tur.tier - 1), r2 = rr * rr, sx = SX[si], sy = SY[si], cands = [];
+      var hitAir = def.air, hitGround = def.ground;
+      n = en.length;
+      for (i = 0; i < n; i++) {
+        e = en[i];
+        if (e.air ? !hitAir : !hitGround) continue;
+        var dx = e.x - sx, dy = e.y - sy;
+        if (dx * dx + dy * dy <= r2) cands.push(e);
+      }
+      if (cands.length === 0) continue;
+      var tgt = pick(tur.type, tur.tier, cands);
+      if (rec) rec.push(si, tgt.id, cands.length);
+      var dmg = def.dmg[tur.tier - 1], dead = false;
+      if (def.splash > 0) {
+        var s2 = def.splash * def.splash, tx = tgt.x, ty = tgt.y;
+        for (i = 0; i < n; i++) {
+          e = en[i];
+          if (e.air ? !hitAir : !hitGround) continue;
+          var ax = e.x - tx, ay = e.y - ty;
+          if (ax * ax + ay * ay <= s2) { var dl = dmg - e.armor; if (dl < 1) dl = 1; e.hp -= dl; if (e.hp <= 0) dead = true; }
+        }
+      } else {
+        var dealt = def.pierce ? dmg : dmg - tgt.armor;
+        if (dealt < 1) dealt = 1;
+        tgt.hp -= dealt;
+        if (def.slow > 0) { tgt.slow = def.slow; tgt.slowed = 1; }
+        if (tgt.hp <= 0) dead = true;
+      }
+      tur.cd = def.period;
+      if (dead) {
+        var alive = [], born = null;
+        for (i = 0; i < n; i++) {
+          e = en[i];
+          if (e.hp > 0) { alive.push(e); continue; }
+          St.gold += e.bounty;
+          if (e.type === "splitter") { if (!born) born = []; born.push(e); }
+        }
+        en = St.en = alive;
+        if (born) for (i = 0; i < born.length; i++) {
+          var chp = Math.max(1, Math.floor(born[i].maxHp / 4));
+          for (j = 0; j < 3; j++) spawnE(St, "splitling", born[i].wave, chp, born[i].progress);
+        }
+      }
+    }
+    n = en.length;
+    for (i = 0; i < n; i++) { e = en[i]; if (e.slow > 0) { e.slow -= 1; if (e.slow === 0) e.slowed = 0; } }
+  }
+
+  // ---------------------------------------------------------------- lookahead
+  var PATTERN = ["grunt", "runner", "grunt", "wisp", "grunt", "brute", "grunt", "splitter", "grunt", "runner", "grunt", "wisp", "mender", "grunt", "brute", "grunt", "runner", "grunt", "splitter", "grunt", "wisp", "runner", "brute"];
+  function waveList(w) {
+    if (known[w]) return known[w];
+    var n = 4 + Math.floor(3 * w / 5), out = [];
+    for (var i = 0; i < n; i++) out.push(PATTERN[(i + w * 3) % 23]);
+    return out;
+  }
+  function cloneState(St) {
+    var en = [], tur = [], i, e, src = St.en;
+    for (i = 0; i < src.length; i++) {
+      e = src[i];
+      en.push({ id: e.id, type: e.type, wave: e.wave, hp: e.hp, maxHp: e.maxHp, progress: e.progress, remaining: e.remaining, age: e.age, slow: e.slow, slowed: e.slowed,
+        armor: e.armor, speed: e.speed, slowSpeed: e.slowSpeed, bounty: e.bounty, leak: e.leak, air: e.air, routeLen: e.routeLen, x: e.x, y: e.y, gone: 0, mender: e.mender });
+    }
+    for (i = 0; i < 16; i++) { var t = St.tur[i]; tur.push(t ? { type: t.type, tier: t.tier, spent: t.spent, cd: t.cd, def: t.def } : null); }
+    return { tick: St.tick, gold: St.gold, baseHp: St.baseHp, wave: St.wave, nextId: St.nextId, en: en, tur: tur, q: St.q.slice(St.qh), qh: 0, fell: false, track: false, mx: 0 };
+  }
+  // play the shadow forward from this wave start with the given actions; returns ticks survived (capped) plus a small bonus when it holds
+  var roHp = 0, roMx = 0;
+  function rollout(acts, tick, w, H, track) {
+    var St = cloneState(S), t = tick, end = tick + H, i;
+    St.track = !!track;
+    applyActs(St, acts);
+    queueWave(St, w, tick);
+    while (t < end) {
+      if (t > tick && (t - 20) % 40 === 0) {
+        var ww = (t - 20) / 40 + 1;
+        St.wave = ww;
+        St.gold += Math.min(50, Math.floor(St.gold * 5 / 100)) + 10 + 2 * ww;
+        var cds = [];
+        for (i = 0; i < 16; i++) cds.push(St.tur[i] ? St.tur[i].cd : 0);
+        applyActs(St, decide({ gold: St.gold, wave: ww }, St.tur, cds));
+        if (!known[ww]) known[ww] = null;
+        var keepK = known[ww]; known[ww] = waveList(ww); queueWave(St, ww, t); known[ww] = keepK;
+      }
+      simTick(St, t, null);
+      if (St.fell) { roHp = 0; roMx = 1; return t - tick; }
+      t++;
+    }
+    roHp = St.baseHp; roMx = St.mx;
+    return H + St.baseHp * 30;
+  }
+  var rstAlt = null;
+  // When the forward simulation predicts lost base HP, search one-step changes of plan and keep the best.
+  function improve(acts, w, tick, state, board, cds) {
+    var H = P.lookH, base, m, bm = 0, bvv, full = w < P.lookSafeUntil ? H + 30 * S.baseHp : H;
+    mode = 0;
+    base = rollout(acts, tick, w, H);
+    if (DBG) DBG.looks = (DBG.looks || 0) + 1;
+    if (base >= full) return acts;                       // nothing leaks within the horizon
+    bvv = base;
+    if (P.lookRst > 0.5 && rstAlt) {
+      for (m = 0; m < rstAlt.length; m++) { var va = rollout(rstAlt[m], tick, w, H); if (va > bvv + P.lookMargin) { bvv = va; acts = rstAlt[m]; if (DBG) DBG.rstSw = (DBG.rstSw || 0) + 1; } }
+      base = bvv;
+    }
+    for (m = 1; m <= P.modes; m++) { mode = m; var vm = rollout(acts, tick, w, H); if (vm > bvv + P.lookMargin) { bvv = vm; bm = m; } }
+    mode = bm; base = bvv;
+    if (DBG && bm) DBG.modeSw = (DBG.modeSw || 0) + 1;
+    if (base >= full) return acts;
+    var limit = base >= H ? H : Math.min(H, base + P.lookExtra), rounds = 0, types = P.lookTypes, slot, k, u, v, ty, cand;
+    while (rounds < P.lookRounds && work < P.lookWork) {
+      var St = cloneState(S), best = null, bestV = base + P.lookMargin;
+      applyActs(St, acts);
+      // (a) convert one turret to another type at the same tier
+      for (slot = 0; slot < 16; slot++) {
+        var t = St.tur[slot];
+        if (!t) continue;
+        var refund = Math.floor(t.spent * 70 / 100), mul = t.tier === 1 ? 1 : t.tier === 2 ? 2 : 4;
+        if (acts.length + 1 + t.tier > 32) continue;
+        for (k = 0; k < types.length; k++) {
+          ty = TCH[types.charAt(k)];
+          if (ty === t.type || St.gold + refund < TUR[ty].cost * mul) continue;
+          cand = acts.concat([{ op: "sell", slot: slot }, { op: "build", slot: slot, type: ty }]);
+          for (u = 1; u < t.tier; u++) cand.push({ op: "upgrade", slot: slot });
+          v = rollout(cand, tick, w, limit);
+          if (DBG) DBG.rolls = (DBG.rolls || 0) + 1;
+          if (v > bestV) { bestV = v; best = cand; }
+        }
+      }
+      // (b) one out-of-order purchase first, then the usual order with whatever gold is left
+      if (rounds === 0 && P.lookBuy > 0.5) {
+        for (slot = 0; slot < 16; slot++) {
+          var cur = board[slot], opts = [];
+          if (!cur) { for (k = 0; k < types.length; k++) { ty = TCH[types.charAt(k)]; if (state.gold >= TUR[ty].cost) opts.push({ a: { op: "build", slot: slot, type: ty }, cost: TUR[ty].cost, t: { type: ty, tier: 1, spent: TUR[ty].cost } }); } }
+          else if (cur.tier < 3 && state.gold >= TUR[cur.type].cost * cur.tier) opts.push({ a: { op: "upgrade", slot: slot }, cost: TUR[cur.type].cost * cur.tier, t: { type: cur.type, tier: cur.tier + 1, spent: cur.spent + TUR[cur.type].cost * cur.tier } });
+          for (k = 0; k < opts.length; k++) {
+            var b2 = board.slice(); b2[slot] = opts[k].t;
+            cand = [opts[k].a].concat(decide({ gold: state.gold - opts[k].cost, wave: w }, b2, null, 0));
+            v = rollout(cand, tick, w, limit);
+            if (DBG) DBG.rolls = (DBG.rolls || 0) + 1;
+            if (v > bestV) { bestV = v; best = cand; if (DBG) DBG.buyBest = (DBG.buyBest || 0) + 1; }
+          }
+        }
+      }
+      if (!best) break;
+      acts = best; base = bestV; rounds++;
+      if (DBG) DBG.conv = (DBG.conv || 0) + 1;
+      if (base >= (w < P.lookSafeUntil ? limit + 30 * S.baseHp : limit)) break;
+    }
+    return acts;
+  }
+
+  // ---------------------------------------------------------------- purchase logic
+  var items = P.order.split(" ");
+  function decide(state, board, cds, floorGold, rstMin) {
+    if (rstMin === undefined) rstMin = P.rstMin;
+    // board[i] = null | {type, tier, spent}; cds[i] = remaining cooldown (or -1 when unknown)
+    var acts = [], gold = state.gold, w = state.wave, i;
+    var reserve = w >= P.resEnd ? 0 : Math.max(0, Math.min(P.resMax, P.resRate * (w - P.resW0)));
+    if (floorGold > reserve) reserve = floorGold;
+    var sim = [], want = [];
+    for (i = 0; i < 16; i++) { sim.push(board[i] ? { type: board[i].type, tier: board[i].tier } : null); want.push(0); }
+    var complete = true;
+    for (var p = 0; p < items.length && acts.length < 32; p++) {
+      var it = items[p], op = it.charAt(0), slot = parseInt(it.substring(1), 10), cost;
+      if (op === "u") {
+        want[slot] += 1;
+        if (!sim[slot] || sim[slot].tier >= want[slot] || sim[slot].tier >= 3) continue;
+        cost = TUR[sim[slot].type].cost * sim[slot].tier;
+        if (gold - cost < reserve) { complete = false; break; }
+        gold -= cost; sim[slot].tier++; acts.push({ op: "upgrade", slot: slot });
+      } else if (TCH[op]) {
+        want[slot] = 1;
+        if (sim[slot]) continue;
+        cost = TUR[TCH[op]].cost;
+        if (gold - cost < reserve) { complete = false; break; }
+        gold -= cost; sim[slot] = { type: TCH[op], tier: 1 }; acts.push({ op: "build", slot: slot, type: TCH[op] });
+      }
+    }
+    // cooldown resets: sell + rebuild a turret that still has a long reload ahead (a new turret fires at once)
+    if (cds && w >= P.rstWave) {
+      var cand = [];
+      for (i = 0; i < 16; i++) {
+        var b = board[i];
+        if (!b || !sim[i] || sim[i].tier !== b.tier) continue;
+        if (b.type !== "cannon" && !(b.type === "lance" && P.rstLance > 0.5)) continue;
+        var gain = cds[i] - 1;
+        if (gain >= rstMin) cand.push({ slot: i, gain: gain, cost: b.spent - Math.floor(b.spent * 70 / 100), b: b });
+      }
+      cand.sort(function (a, b2) { return b2.gain - a.gain || a.slot - b2.slot; });
+      for (i = 0; i < cand.length; i++) {
+        var c = cand[i];
+        if (gold - c.cost < P.rstReserve || acts.length + 1 + c.b.tier > 32) continue;
+        gold -= c.cost;
+        acts.push({ op: "sell", slot: c.slot }); acts.push({ op: "build", slot: c.slot, type: c.b.type });
+        for (var u = 1; u < c.b.tier; u++) acts.push({ op: "upgrade", slot: c.slot });
+        if (DBG) DBG.resets = (DBG.resets || 0) + 1;
+      }
+    }
+    return acts;
+  }
+
+  function planInner(state) {
+    var w = state.wave, tick = state.tick, i;
+    known[w + 1] = state.nextWave.slice();
+    if (ok) {
+      if (S.tick !== tick || S.fell || !known[w]) ok = false;
+      else {
+        S.wave = w;
+        S.gold += Math.min(50, Math.floor(S.gold * 5 / 100)) + 10 + 2 * w;
+        var en = S.en, se = state.enemies;
+        if (S.gold !== state.gold || S.baseHp !== state.baseHp || en.length !== se.length) ok = false;
+        else for (i = 0; i < en.length; i++) if (en[i].id !== se[i].id || en[i].hp !== se[i].hp) { ok = false; break; }
+        for (i = 0; ok && i < 16; i++) {
+          var a = S.tur[i], b = state.slots[i].turret;
+          if (!a !== !b || (a && (a.type !== b.type || a.tier !== b.tier))) ok = false;
+        }
+      }
+      if (!ok && DBG) DBG.desync = (DBG.desync || 0) + 1;
+    }
+    var board = [], cds = null;
+    for (i = 0; i < 16; i++) board.push(state.slots[i].turret);
+    if (ok) { cds = []; for (i = 0; i < 16; i++) cds.push(S.tur[i] ? S.tur[i].cd : 0); }
+    var acts = decide(state, board, cds, 0);
+    mode = 0;
+    if (ok && P.bank > 0.5 && w >= P.bankFrom && w < P.bankUntil && acts.length > 0) {
+      // need-based spending: keep the gold (interest) while the board still holds comfortably
+      var lean = decide(state, board, cds, P.bankCap);
+      if (lean.length < acts.length) {
+        rollout(lean, tick, w, P.bankH, true);
+        if (DBG) DBG.bankTests = (DBG.bankTests || 0) + 1;
+        if (roHp === S.baseHp && roMx <= P.bankTheta) { acts = lean; if (DBG) DBG.banked = (DBG.banked || 0) + 1; }
+      }
+    }
+    if (ok && P.look > 0.5 && w >= P.lookWave && work < P.lookWork) {
+      rstAlt = P.lookRst > 0.5 && w >= P.rstWave ? [decide(state, board, cds, 0, 1), decide(state, board, cds, 0, 999)] : null;
+      acts = improve(acts, w, tick, state, board, cds);
+    }
+    if (ok) {
+      applyActs(S, acts);
+      queueWave(S, w, tick);
+      dec = []; dptr = 0;
+      for (var t = tick; t < tick + 40 && !S.fell; t++) simTick(S, t, dec);
+      S.tick = tick + 40;
+    }
+    if (DBG && work > (DBG.workMax || 0)) DBG.workMax = work;
+    return acts;
+  }
+  function plan(state) {
+    try { return planInner(state); }
+    catch (err) {
+      ok = false; if (DBG) DBG.err = String(err && err.stack || err);
+      try { var board = []; for (var i = 0; i < 16; i++) board.push(state.slots[i].turret); return decide(state, board, null); } catch (e2) { return []; }
+    }
+  }
+  function target(turret, cands) {
+    if (ok) {
+      var i = dptr;
+      // tolerate an engine that does not ask when a turret has a single candidate
+      while (i < dec.length && dec[i + 2] === 1 && !(dec[i] === turret.slot && cands.length === 1)) i += 3;
+      if (i < dec.length && dec[i] === turret.slot && dec[i + 2] === cands.length) {
+        var id = dec[i + 1];
+        for (var k = 0; k < cands.length; k++) if (cands[k].id === id) { dptr = i + 3; return id; }
+      }
+      ok = false; if (DBG) DBG.desync = (DBG.desync || 0) + 1;
+    }
+    try {
+      mode = 0; curM = [];
+      if (P.hDisc > 0) for (var q = 0; q < cands.length; q++) if (cands[q].type === "mender") curM.push(cands[q]);
+      return pick(turret.type, turret.tier, cands).id;
+    } catch (err) { return -1; }
+  }
+  return { plan: plan, target: target };
+}
+</script>
+<script id="rampart-sim">
+function rampartSimulate(createStrategy, seed, maxTicks) {
+  "use strict";
+  // Optional 4th argument: a passive recorder (used only by the replay viewer). It only reads.
+  var hook = arguments.length > 3 ? arguments[3] : null;
+
+  function mulberry32(a) { return function () {
+    a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return (t ^ (t >>> 14)) >>> 0; }; }
+
+  function makeRoute(tiles) {
+    var segs = [], total = 0, i;
+    for (i = 0; i + 1 < tiles.length; i++) {
+      var x0 = tiles[i][0] * 100 + 50, y0 = tiles[i][1] * 100 + 50;
+      var dx = tiles[i + 1][0] * 100 + 50 - x0, dy = tiles[i + 1][1] * 100 + 50 - y0;
+      var len = Math.abs(dx) + Math.abs(dy);
+      segs.push({ x: x0, y: y0, ux: dx > 0 ? 1 : dx < 0 ? -1 : 0, uy: dy > 0 ? 1 : dy < 0 ? -1 : 0, start: total, len: len });
+      total += len;
+    }
+    return { segs: segs, length: total };
+  }
+  var GROUND = makeRoute([[0, 2], [6, 2], [6, 10], [12, 10], [12, 3], [18, 3], [18, 11], [23, 11]]);
+  var AIR = makeRoute([[0, 6], [21, 6], [21, 11], [23, 11]]);
+  var SLOT_TILES = [[3, 3], [5, 5], [7, 4], [7, 8], [9, 9], [10, 5], [11, 8], [13, 8], [14, 5], [15, 2], [16, 7], [17, 4], [19, 8], [20, 10], [22, 9], [3, 7]];
+
+  var TURRETS = {
+    bolt:   { idx: 0, cost: 50,  dmg: 26,  period: 8,  range: 300, splash: 0,  slow: 0,  pierce: 0, ground: 1, air: 1 },
+    cannon: { idx: 1, cost: 90,  dmg: 60,  period: 24, range: 260, splash: 90, slow: 0,  pierce: 0, ground: 1, air: 0 },
+    frost:  { idx: 2, cost: 70,  dmg: 10,  period: 12, range: 240, splash: 0,  slow: 30, pierce: 0, ground: 1, air: 1 },
+    lance:  { idx: 3, cost: 120, dmg: 180, period: 36, range: 360, splash: 0,  slow: 0,  pierce: 1, ground: 1, air: 0 },
+    flak:   { idx: 4, cost: 80,  dmg: 40,  period: 10, range: 320, splash: 70, slow: 0,  pierce: 0, ground: 0, air: 1 }
+  };
+  var ENEMIES = {
+    grunt:     { hp: 60,  speed: 10, bounty: 4, leak: 1, air: 0, first: 1, weight: 10 },
+    runner:    { hp: 40,  speed: 20, bounty: 4, leak: 1, air: 0, first: 2, weight: 4 },
+    wisp:      { hp: 50,  speed: 12, bounty: 6, leak: 2, air: 1, first: 3, weight: 3 },
+    brute:     { hp: 150, speed: 6,  bounty: 9, leak: 3, air: 0, first: 4, weight: 3 },
+    splitter:  { hp: 90,  speed: 8,  bounty: 6, leak: 2, air: 0, first: 6, weight: 2 },
+    mender:    { hp: 70,  speed: 8,  bounty: 7, leak: 2, air: 0, first: 8, weight: 1 },
+    splitling: { hp: 0,   speed: 12, bounty: 1, leak: 1, air: 0, first: 0, weight: 0 }
+  };
+  var ROSTER = ["grunt", "runner", "wisp", "brute", "splitter", "mender"];
+
+  var rng = mulberry32(seed);
+  var hpMult = [0, 1000];
+  function mult(w) { while (hpMult.length <= w) hpMult.push(Math.floor(hpMult[hpMult.length - 1] * 108 / 100)); return hpMult[w]; }
+  var waves = [null];
+  function genWave(w) {
+    var n = 4 + Math.floor(3 * w / 5), sum = 0, i, j, list = [];
+    for (j = 0; j < ROSTER.length; j++) if (ENEMIES[ROSTER[j]].first <= w) sum += ENEMIES[ROSTER[j]].weight;
+    for (i = 0; i < n; i++) {
+      var r = rng() % sum;
+      for (j = 0; j < ROSTER.length; j++) {
+        var d = ENEMIES[ROSTER[j]];
+        if (d.first > w) continue;
+        if (r < d.weight) { list.push(ROSTER[j]); break; }
+        r -= d.weight;
+      }
+    }
+    waves[w] = list;
+  }
+
+  var strategy = createStrategy();
+  var hasTarget = !!strategy && typeof strategy.target === "function";
+  var gold = 250, baseHp = 10, wave = 0, nextId = 1, fallTick = -1;
+  var log = [], enemies = [], queue = [], qHead = 0;
+  var slots = [], i;
+  for (i = 0; i < 16; i++) slots.push({ slot: i, x: SLOT_TILES[i][0] * 100 + 50, y: SLOT_TILES[i][1] * 100 + 50, turret: null });
+
+  function place(e) {
+    var segs = e.air ? AIR.segs : GROUND.segs, p = e.progress, s = segs[segs.length - 1], k;
+    for (k = 0; k < segs.length; k++) if (p < segs[k].start + segs[k].len) { s = segs[k]; break; }
+    var d = p - s.start;
+    e.x = s.x + s.ux * d; e.y = s.y + s.uy * d;
+  }
+  function spawn(type, w, maxHp, progress) {
+    var d = ENEMIES[type];
+    var e = { id: nextId++, type: type, wave: w, hp: maxHp, maxHp: maxHp, progress: progress, age: 0, slow: 0,
+      armor: type === "grunt" ? Math.floor(w / 4) : type === "brute" ? 6 + w : 0,
+      speed: d.speed, slowSpeed: Math.floor(d.speed * 60 / 100), bounty: d.bounty, leak: d.leak, air: d.air,
+      routeLen: d.air ? AIR.length : GROUND.length, x: 0, y: 0, gone: 0 };
+    place(e);
+    enemies.push(e);
+    return e;
+  }
+  function view(e) {
+    return { id: e.id, type: e.type, hp: e.hp, maxHp: e.maxHp, x: e.x, y: e.y, air: e.air, armor: e.armor,
+      speed: e.speed, slowed: e.slow > 0 ? 1 : 0, remaining: e.routeLen - e.progress };
+  }
+  function turretRange(t) { return TURRETS[t.type].range + 30 * (t.tier - 1); }
+  function turretDamage(t) {
+    var d = TURRETS[t.type].dmg, k;
+    for (k = 1; k < t.tier; k++) d = Math.floor(d * 16 / 10);
+    return d;
+  }
+  function applyActions(acts, tick) {
+    if (!acts || typeof acts.length !== "number") return;
+    var n = Math.min(acts.length, 32), k;
+    for (k = 0; k < n; k++) {
+      var a = acts[k];
+      if (!a || typeof a !== "object") continue;
+      var si = a.slot;
+      if (typeof si !== "number" || si !== Math.floor(si) || si < 0 || si > 15) continue;
+      var s = slots[si], t = s.turret;
+      if (a.op === "build") {
+        if (t || typeof a.type !== "string" || !TURRETS.hasOwnProperty(a.type)) continue;
+        var def = TURRETS[a.type];
+        if (gold < def.cost) continue;
+        gold -= def.cost;
+        s.turret = { type: a.type, tier: 1, spent: def.cost, cd: 0 };
+        log.push([tick, "B", si, def.idx]);
+      } else if (a.op === "upgrade") {
+        if (!t || t.tier >= 3) continue;
+        var c = TURRETS[t.type].cost * t.tier;
+        if (gold < c) continue;
+        gold -= c; t.tier += 1; t.spent += c;
+        log.push([tick, "U", si, t.tier]);
+      } else if (a.op === "sell") {
+        if (!t) continue;
+        gold += Math.floor(t.spent * 70 / 100);
+        s.turret = null;
+        log.push([tick, "S", si, 0]);
+      }
+    }
+  }
+
+  var tick, fell = false, j, e;
+  for (tick = 0; tick < maxTicks && !fell; tick++) {
+    // 1. wave start
+    if (tick >= 20 && (tick - 20) % 40 === 0) {
+      wave = (tick - 20) / 40 + 1;
+      gold += Math.min(50, Math.floor(gold * 5 / 100)) + 10 + 2 * wave;
+      if (!waves[wave]) genWave(wave);
+      genWave(wave + 1);
+      var st = { tick: tick, wave: wave, gold: gold, baseHp: baseHp, slots: [], enemies: [], nextWave: waves[wave + 1].slice() };
+      for (i = 0; i < 16; i++) {
+        var tt = slots[i].turret;
+        st.slots.push({ slot: i, x: slots[i].x, y: slots[i].y, turret: tt ? { type: tt.type, tier: tt.tier, spent: tt.spent } : null });
+      }
+      for (i = 0; i < enemies.length; i++) st.enemies.push(view(enemies[i]));
+      applyActions(strategy.plan(st), tick);
+      if (hook && hook.wave) hook.wave(tick, wave, waves[wave], waves[wave + 1]);
+      var cur = waves[wave];
+      for (i = 0; i < cur.length; i++) queue.push({ tick: tick + 4 * i, wave: wave, idx: i, type: cur[i] });
+      // keep ordered by tick, then wave, then index (stable insertion)
+      for (i = queue.length - cur.length; i < queue.length; i++) {
+        var q = queue[i]; j = i - 1;
+        while (j >= qHead && (queue[j].tick > q.tick || (queue[j].tick === q.tick && (queue[j].wave > q.wave || (queue[j].wave === q.wave && queue[j].idx > q.idx))))) { queue[j + 1] = queue[j]; j--; }
+        queue[j + 1] = q;
+      }
+    }
+    // 2. spawn
+    while (qHead < queue.length && queue[qHead].tick <= tick) {
+      var sp = queue[qHead++];
+      var ne = spawn(sp.type, sp.wave, Math.floor(ENEMIES[sp.type].hp * mult(sp.wave) / 1000), 0);
+      if (hook && hook.spawn) hook.spawn(tick, ne, 0);
+    }
+    if (qHead > 512) { queue = queue.slice(qHead); qHead = 0; }
+    // 3. move
+    var leaked = false;
+    for (i = 0; i < enemies.length; i++) {
+      e = enemies[i];
+      e.progress += e.slow > 0 ? e.slowSpeed : e.speed;
+      if (e.progress >= e.routeLen) {
+        baseHp -= e.leak;
+        e.hp = 0; e.gone = 1; leaked = true;
+        log.push([tick, "L", e.id, baseHp]);
+        if (hook && hook.leak) hook.leak(tick, e, baseHp);
+        if (baseHp <= 0) { fell = true; fallTick = tick; log.push([tick, "F", wave, 0]); break; }
+      } else place(e);
+    }
+    if (leaked) { var keep = []; for (i = 0; i < enemies.length; i++) if (!enemies[i].gone) keep.push(enemies[i]); enemies = keep; }
+    if (fell) { if (hook && hook.fall) hook.fall(tick, wave); if (hook && hook.frame) hook.frame(tick, wave, gold, baseHp, enemies, slots); break; }
+    // 4. age & heal
+    for (i = 0; i < enemies.length; i++) {
+      e = enemies[i];
+      e.age += 1;
+      if (e.type === "mender" && e.age % 20 === 0) {
+        for (j = 0; j < enemies.length; j++) {
+          var o = enemies[j], hx = o.x - e.x, hy = o.y - e.y;
+          if (hx * hx + hy * hy <= 22500) { o.hp += Math.floor(o.maxHp * 8 / 100); if (o.hp > o.maxHp) o.hp = o.maxHp; }
+        }
+        if (hook && hook.heal) hook.heal(tick, e);
+      }
+    }
+    // 5. turrets fire
+    for (var si = 0; si < 16; si++) {
+      var tur = slots[si].turret;
+      if (!tur) continue;
+      if (tur.cd > 0) { tur.cd -= 1; if (tur.cd > 0) continue; }
+      var def = TURRETS[tur.type], rng2 = turretRange(tur), r2 = rng2 * rng2, sx = slots[si].x, sy = slots[si].y;
+      var cands = [];
+      for (i = 0; i < enemies.length; i++) {
+        e = enemies[i];
+        if (e.air ? !def.air : !def.ground) continue;
+        var dx = e.x - sx, dy = e.y - sy;
+        if (dx * dx + dy * dy <= r2) cands.push(e);
+      }
+      if (cands.length === 0) continue;
+      var tgt = cands[0];
+      for (i = 1; i < cands.length; i++) if (cands[i].routeLen - cands[i].progress < tgt.routeLen - tgt.progress) tgt = cands[i];
+      if (hasTarget) {
+        var views = [];
+        for (i = 0; i < cands.length; i++) views.push(view(cands[i]));
+        var pick = strategy.target({ slot: si, type: tur.type, tier: tur.tier, x: sx, y: sy, range: rng2 }, views);
+        if (typeof pick === "number") for (i = 0; i < cands.length; i++) if (cands[i].id === pick) { tgt = cands[i]; break; }
+      }
+      var dmg = turretDamage(tur), hits;
+      if (def.splash > 0) {
+        hits = [];
+        var s2 = def.splash * def.splash;
+        for (i = 0; i < enemies.length; i++) {
+          e = enemies[i];
+          if (e.air ? !def.air : !def.ground) continue;
+          var ax = e.x - tgt.x, ay = e.y - tgt.y;
+          if (ax * ax + ay * ay <= s2) hits.push(e);
+        }
+      } else hits = [tgt];
+      for (i = 0; i < hits.length; i++) {
+        e = hits[i];
+        var dealt = def.pierce ? dmg : dmg - e.armor;
+        if (dealt < 1) dealt = 1;
+        e.hp -= dealt;
+        if (def.slow > 0) e.slow = def.slow;
+      }
+      tur.cd = def.period;
+      if (hook && hook.shot) hook.shot(tick, si, tur, tgt, hits);
+      var anyDead = false;
+      for (i = 0; i < hits.length; i++) if (hits[i].hp <= 0) { anyDead = true; break; }
+      if (anyDead) {
+        var alive = [], born = [];
+        for (i = 0; i < enemies.length; i++) {
+          e = enemies[i];
+          if (e.hp > 0) { alive.push(e); continue; }
+          gold += e.bounty;
+          log.push([tick, "K", e.id, si]);
+          if (hook && hook.kill) hook.kill(tick, e, si);
+          if (e.type === "splitter") born.push(e);
+        }
+        enemies = alive;
+        for (i = 0; i < born.length; i++) {
+          var chp = Math.max(1, Math.floor(born[i].maxHp / 4));
+          for (j = 0; j < 3; j++) { var ch = spawn("splitling", born[i].wave, chp, born[i].progress); if (hook && hook.spawn) hook.spawn(tick, ch, born[i].id); }
+        }
+      }
+    }
+    // 6. slow timers
+    for (i = 0; i < enemies.length; i++) if (enemies[i].slow > 0) enemies[i].slow -= 1;
+    if (hook && hook.frame) hook.frame(tick, wave, gold, baseHp, enemies, slots);
+  }
+
+  var endTick = fell ? fallTick : maxTicks;
+  var text = JSON.stringify(log), h = 0x811c9dc5;
+  for (i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  var hex = (h >>> 0).toString(16);
+  while (hex.length < 8) hex = "0" + hex;
+  return { score: Math.round((endTick - 20) / 40 * 100) / 100, fallTick: fallTick, log: log, hash: hex };
+}
+</script>
+<script>
+(function () {
+  "use strict";
+  // =====================================================================
+  //  Constants & seeded visual randomness
+  // =====================================================================
+  const DURATION = 100;
+  var TPS = 20, TICK = 1 / TPS, SEED = 42;
+  var SHOT_LIFE = 0.15;
+  var ETYPES = ["grunt", "runner", "wisp", "brute", "splitter", "mender", "splitling"];
+  var TTYPES = ["bolt", "cannon", "frost", "lance", "flak"];
+  var EIDX = {}, TIDX = {}, ii;
+  for (ii = 0; ii < ETYPES.length; ii++) EIDX[ETYPES[ii]] = ii;
+  for (ii = 0; ii < TTYPES.length; ii++) TIDX[TTYPES[ii]] = ii;
+  var GROUND_TILES = [[0, 2], [6, 2], [6, 10], [12, 10], [12, 3], [18, 3], [18, 11], [23, 11]];
+  var AIR_TILES = [[0, 6], [21, 6], [21, 11], [23, 11]];
+  var SLOT_TILES = [[3, 3], [5, 5], [7, 4], [7, 8], [9, 9], [10, 5], [11, 8], [13, 8], [14, 5], [15, 2], [16, 7], [17, 4], [19, 8], [20, 10], [22, 9], [3, 7]];
+  var BASE_X = 23.5, BASE_Z = 11.5;
+  var SPLASH_R = [0, 0.9, 0, 0, 0.7];
+  var HEAL_R = 1.5;
+
+  function mulberry(a) {
+    return function () {
+      a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var vrand = mulberry(SEED);            // visual-only randomness, seed 42 (the built-in RNG is never used)
+  var RT = new Float32Array(8192);
+  for (ii = 0; ii < RT.length; ii++) RT[ii] = vrand();
+  function rt(i) { return RT[i & 8191]; }
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function smooth(v) { v = clamp01(v); return v * v * (3 - 2 * v); }
+  function lerp(a, b, f) { return a + (b - a) * f; }
+  function noise1(t, ch) {                // smooth seeded value noise
+    var i = Math.floor(t), f = t - i, u = f * f * (3 - 2 * f);
+    return lerp(rt(i * 7 + ch * 1013), rt((i + 1) * 7 + ch * 1013), u) * 2 - 1;
+  }
+
+  // =====================================================================
+  //  Replay: one run of the real simulation, observed through passive hooks
+  // =====================================================================
+  var REP = (function () {
+    var tracks = [], byId = {}, frames = [], shots = [], kills = [], leaks = [], heals = [], waves = [];
+    var goldAt = [], hpAt = [], waveAt = [], fallTick = -1, firstWave = null;
+    var hook = {
+      spawn: function (tick, e, parentId) {
+        var tr = { id: e.id, type: EIDX[e.type], air: e.air, maxHp: e.maxHp, first: tick, x: [], y: [], hp: [], slow: [],
+          end: 0, endTick: -1, ex: 0, ey: 0, parent: parentId, born: tick, idx: tracks.length };
+        byId[e.id] = tr; tracks.push(tr);
+      },
+      frame: function (tick, wave, gold, baseHp, enemies) {
+        var list = new Int32Array(enemies.length), i, e, tr;
+        for (i = 0; i < enemies.length; i++) {
+          e = enemies[i]; tr = byId[e.id];
+          if (tr.x.length === 0) tr.first = tick;
+          tr.x.push(e.x / 100); tr.y.push(e.y / 100); tr.hp.push(e.hp); tr.slow.push(e.slow > 0 ? 1 : 0);
+          list[i] = tr.idx;
+        }
+        frames[tick] = list; goldAt[tick] = gold; hpAt[tick] = baseHp; waveAt[tick] = wave;
+      },
+      shot: function (tick, slot, tur, tgt, hits) {
+        shots.push({ tick: tick, slot: slot, type: TIDX[tur.type], tier: tur.tier, x: tgt.x / 100, y: tgt.y / 100, air: tgt.air, n: hits.length });
+      },
+      kill: function (tick, e, slot) {
+        var tr = byId[e.id]; tr.end = 1; tr.endTick = tick; tr.ex = e.x / 100; tr.ey = e.y / 100;
+        kills.push({ tick: tick, x: e.x / 100, y: e.y / 100, air: e.air, type: EIDX[e.type], id: e.id });
+      },
+      leak: function (tick, e, baseHp) {
+        var tr = byId[e.id]; tr.end = 2; tr.endTick = tick; tr.ex = BASE_X; tr.ey = BASE_Z;
+        leaks.push({ tick: tick, id: e.id, type: EIDX[e.type], hp: baseHp });
+      },
+      heal: function (tick, e) { heals.push({ tick: tick, x: e.x / 100, y: e.y / 100 }); },
+      wave: function (tick, wave, cur, next) { if (!firstWave) firstWave = cur.slice(); waves.push({ tick: tick, wave: wave, next: next.slice() }); },
+      fall: function (tick) { fallTick = tick; }
+    };
+    var result = rampartSimulate(createStrategy, 42, 2020, hook);     // the one replay: seed 42, ticks 0..2019
+    var lastTick = frames.length - 1;
+
+    // board timeline from the event log (builds / upgrades / sells happen only at wave starts)
+    var slotStates = [], actions = [], s, i;
+    for (s = 0; s < 16; s++) slotStates.push([{ t: -1, type: -1, tier: 0, kind: "", prevType: -1, prevTier: 0 }]);
+    for (i = 0; i < result.log.length; i++) {
+      var L = result.log[i], code = L[1];
+      if (code !== "B" && code !== "U" && code !== "S") continue;
+      var st = slotStates[L[2]], prev = st[st.length - 1], t = L[0] * TICK;
+      if (code === "B") st.push({ t: t, type: L[3], tier: 1, kind: "B", prevType: prev.type, prevTier: prev.tier });
+      else if (code === "U") st.push({ t: t, type: prev.type, tier: L[3], kind: "U", prevType: prev.type, prevTier: prev.tier });
+      else st.push({ t: t, type: -1, tier: 0, kind: "S", prevType: prev.type, prevTier: prev.tier });
+      actions.push({ t: t, kind: code, slot: L[2], type: code === "B" ? L[3] : prev.type, tier: code === "U" ? L[3] : prev.tier });
+    }
+    // per-slot shot lists (for aiming and recoil)
+    var slotShots = [];
+    for (s = 0; s < 16; s++) slotShots.push([]);
+    for (i = 0; i < shots.length; i++) slotShots[shots[i].slot].push(shots[i]);
+    // composition preview per wave: counts by type (table order) of wave w+1, valid from wave w's start
+    var previews = [];   // previews[w] = counts of wave w+1
+    function countTypes(list) { var c = [0, 0, 0, 0, 0, 0]; for (var k = 0; k < list.length; k++) c[EIDX[list[k]]]++; return c; }
+    var wave1 = firstWave ? countTypes(firstWave) : [0, 0, 0, 0, 0, 0];
+    previews[0] = wave1;
+    for (i = 0; i < waves.length; i++) previews[waves[i].wave] = countTypes(waves[i].next);
+    // trauma: value right after each leak / fall event (linear decay 1.0 per second between events)
+    var trauma = [], tv = 0, tt = 0;
+    for (i = 0; i < leaks.length; i++) {
+      var lt = leaks[i].tick * TICK;
+      tv = Math.max(0, tv - (lt - tt)); tv = Math.min(1, tv + 0.3); tt = lt;
+      if (leaks[i].hp <= 0) tv = Math.min(1, tv + 1.0);   // the leak that fells the base
+      trauma.push({ t: lt, v: tv });
+    }
+    // which leak knocks which wall chunk: chunk j goes when base HP first drops to <= 9 - j
+    var knock = [];
+    for (i = 0; i < 10; i++) knock.push(Infinity);
+    for (i = 0; i < leaks.length; i++) for (s = 0; s < 10; s++) if (leaks[i].hp <= 9 - s && knock[s] === Infinity) knock[s] = leaks[i].tick * TICK;
+    // peak population per enemy type (to size instance pools)
+    var peak = [0, 0, 0, 0, 0, 0, 0], peakAll = 0;
+    for (i = 0; i <= lastTick; i++) {
+      var cnt = [0, 0, 0, 0, 0, 0, 0], fr = frames[i];
+      for (s = 0; s < fr.length; s++) cnt[tracks[fr[s]].type]++;
+      for (s = 0; s < 7; s++) if (cnt[s] > peak[s]) peak[s] = cnt[s];
+      if (fr.length > peakAll) peakAll = fr.length;
+    }
+    return { result: result, tracks: tracks, frames: frames, shots: shots, kills: kills, leaks: leaks, heals: heals, waves: waves,
+      goldAt: goldAt, hpAt: hpAt, waveAt: waveAt, fallTick: fallTick, fallTime: fallTick >= 0 ? fallTick * TICK : Infinity,
+      lastTick: lastTick, slotStates: slotStates, actions: actions, slotShots: slotShots, previews: previews, trauma: trauma,
+      knock: knock, peak: peak, peakAll: peakAll };
+  })();
+
+  function lowerBound(arr, tick) {       // first index whose .tick >= tick
+    var lo = 0, hi = arr.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (arr[mid].tick < tick) lo = mid + 1; else hi = mid; }
+    return lo;
+  }
+  function traumaAt(t) {
+    var a = REP.trauma, lo = 0, hi = a.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (a[mid].t <= t) lo = mid + 1; else hi = mid; }
+    if (lo === 0) return 0;
+    var v = a[lo - 1].v - (t - a[lo - 1].t);
+    return v < 0 ? 0 : v > 1 ? 1 : v;
+  }
+
+  // =====================================================================
+  //  Renderer, camera, lights
+  // =====================================================================
+  var canvas = document.getElementById("stage");
+  var renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('stage'), antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.25;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.autoClear = false;
+  renderer.setClearColor(0x000000, 0);
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(26, window.innerWidth / window.innerHeight, 0.1, 500);
+  var CAM_ELEV = 55 * Math.PI / 180;
+  var camDir = new THREE.Vector3(0, Math.sin(CAM_ELEV), Math.cos(CAM_ELEV));
+  var camTarget = new THREE.Vector3(12, 0, 7);
+  var camBase = new THREE.Vector3(), camRight = new THREE.Vector3(1, 0, 0), camUp = new THREE.Vector3(0, 1, 0), camFwd = new THREE.Vector3(0, 0, 1);
+  var FIT_PTS = [];
+  (function () {
+    var xs = [-0.5, 24.5], zs = [-0.5, 14.5], ys = [0, 1.1], a, b, c;
+    for (a = 0; a < 2; a++) for (b = 0; b < 2; b++) for (c = 0; c < 2; c++) FIT_PTS.push(new THREE.Vector3(xs[a], ys[c], zs[b]));
+    FIT_PTS.push(new THREE.Vector3(BASE_X, 2.3, BASE_Z), new THREE.Vector3(BASE_X + 0.9, 1.3, BASE_Z + 0.9));
+  })();
+  var viewW = 1, viewH = 1;
+  function fitCamera() {
+    var W = Math.max(1, window.innerWidth), H = Math.max(1, window.innerHeight), v = new THREE.Vector3(), i, it;
+    viewW = W; viewH = H;
+    camera.aspect = W / H;
+    camera.clearViewOffset();
+    // safe band: HUD wave number above, dock (bottom 90 px) below
+    var topPx = Math.max(10, 0.125 * H), botPx = 98, sidePx = 10;
+    var safeTop = 1 - 2 * topPx / H, safeBot = -1 + 2 * botPx / H, safeX = 1 - 2 * sidePx / W;
+    if (safeTop - safeBot < 0.2) { safeTop = 0.9; safeBot = -0.9; }
+    function extents(D) {
+      camera.position.copy(camTarget).addScaledVector(camDir, D);
+      camera.lookAt(camTarget);
+      camera.updateMatrixWorld(true);
+      var e = [1e9, -1e9, 1e9, -1e9];
+      for (i = 0; i < FIT_PTS.length; i++) {
+        v.copy(FIT_PTS[i]).project(camera);
+        if (v.x < e[0]) e[0] = v.x; if (v.x > e[1]) e[1] = v.x; if (v.y < e[2]) e[2] = v.y; if (v.y > e[3]) e[3] = v.y;
+      }
+      return e;
+    }
+    var lo = 6, hi = 600, ext;
+    for (it = 0; it < 48; it++) {
+      var mid = (lo + hi) / 2; ext = extents(mid);
+      if (Math.max(-ext[0], ext[1]) <= safeX && ext[3] - ext[2] <= safeTop - safeBot) hi = mid; else lo = mid;
+    }
+    ext = extents(hi);
+    var shift = (safeTop + safeBot) / 2 - (ext[2] + ext[3]) / 2;        // NDC, positive = up
+    camera.setViewOffset(W, H, 0, shift * H / 2, W, H);
+    camera.updateProjectionMatrix();
+    camBase.copy(camera.position);
+    camRight.setFromMatrixColumn(camera.matrixWorld, 0);
+    camUp.setFromMatrixColumn(camera.matrixWorld, 1);
+    camFwd.setFromMatrixColumn(camera.matrixWorld, 2);
+  }
+
+  var uDesat = { value: 0 };
+  function patch(mat) {                    // lets every world material fade to greyscale after the fall
+    mat.onBeforeCompile = function (shader) {
+      shader.uniforms.uDesat = uDesat;
+      shader.fragmentShader = "uniform float uDesat;\n" + shader.fragmentShader.replace(/\}\s*$/,
+        "  gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114))), uDesat);\n}");
+    };
+    return mat;
+  }
+  function lin(hex) { return new THREE.Color(hex).convertSRGBToLinear(); }
+
+  scene.add(new THREE.HemisphereLight(0x93a6e0, 0x33241c, 0.85));
+  var keyLight = new THREE.DirectionalLight(0xffb070, 2.3);
+  keyLight.position.set(12 - 15, 12.5, 7 + 8.5);
+  keyLight.target.position.set(12, 0, 7);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(2048, 2048);
+  keyLight.shadow.camera.left = -17; keyLight.shadow.camera.right = 17;
+  keyLight.shadow.camera.top = 13; keyLight.shadow.camera.bottom = -13;
+  keyLight.shadow.camera.near = 1; keyLight.shadow.camera.far = 60;
+  keyLight.shadow.camera.updateProjectionMatrix();
+  keyLight.shadow.bias = -0.0006; keyLight.shadow.normalBias = 0.03;
+  scene.add(keyLight); scene.add(keyLight.target);
+  var rimLight = new THREE.DirectionalLight(0x5f7cff, 0.45);
+  rimLight.position.set(34, 9, -8); rimLight.target.position.set(12, 0, 7);
+  scene.add(rimLight); scene.add(rimLight.target);
+
+  // =====================================================================
+  //  Geometry helpers
+  // =====================================================================
+  function P(geo, hex, x, y, z, rx, ry, rz, sx, sy, sz) {
+    if (sx === undefined) sx = 1; if (sy === undefined) sy = sx; if (sz === undefined) sz = sx;
+    var m = new THREE.Matrix4().compose(new THREE.Vector3(x || 0, y || 0, z || 0),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(rx || 0, ry || 0, rz || 0)), new THREE.Vector3(sx, sy, sz));
+    return { geo: geo, color: lin(hex), matrix: m };
+  }
+  function merge(parts) {
+    var pos = [], nor = [], col = [], nm = new THREE.Matrix3(), v = new THREE.Vector3(), k, i;
+    for (k = 0; k < parts.length; k++) {
+      var p = parts[k], g = p.geo.index ? p.geo.toNonIndexed() : p.geo;
+      var A = g.attributes.position, N = g.attributes.normal;
+      nm.getNormalMatrix(p.matrix);
+      for (i = 0; i < A.count; i++) {
+        v.fromBufferAttribute(A, i).applyMatrix4(p.matrix); pos.push(v.x, v.y, v.z);
+        v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor.push(v.x, v.y, v.z);
+        col.push(p.color.r, p.color.g, p.color.b);
+      }
+    }
+    var out = new THREE.BufferGeometry();
+    out.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    out.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
+    out.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    return out;
+  }
+  var HALF_PI = Math.PI / 2;
+  function box(w, h, d) { return new THREE.BoxGeometry(w, h, d); }
+  function cyl(rt_, rb, h, n) { return new THREE.CylinderGeometry(rt_, rb, h, n || 8); }
+  function sph(r, a, b) { return new THREE.SphereGeometry(r, a || 8, b || 6); }
+
+  // =====================================================================
+  //  Procedural textures (detached canvases, never added to the DOM)
+  // =====================================================================
+  var GW = 38.4, GH = 24, GPX = 2048 / 38.4, GX0 = 12 - GW / 2, GZ0 = 7 - GH / 2;
+  function groundTexture() {
+    var c = document.createElement("canvas"); c.width = 2048; c.height = 1280;
+    var g = c.getContext("2d"), r = vrand, i, k;
+    function px(x) { return (x - GX0) * GPX; } function pz(z) { return (z - GZ0) * GPX; }
+    g.fillStyle = "#4d5541"; g.fillRect(0, 0, c.width, c.height);
+    for (i = 0; i < 520; i++) {
+      var bx = r() * c.width, by = r() * c.height, br = 40 + r() * 150, t = r();
+      var tone = t < 0.42 ? "22,26,18" : t < 0.7 ? "128,112,74" : t < 0.9 ? "66,86,50" : "150,138,104";
+      var bg = g.createRadialGradient(bx, by, 0, bx, by, br);
+      bg.addColorStop(0, "rgba(" + tone + "," + (t < 0.42 ? 0.2 : 0.13) + ")"); bg.addColorStop(1, "rgba(" + tone + ",0)");
+      g.fillStyle = bg; g.fillRect(bx - br, by - br, 2 * br, 2 * br);
+    }
+    for (i = 0; i < 9000; i++) {
+      g.fillStyle = r() < 0.5 ? "rgba(0,0,0,0.16)" : "rgba(190,180,150,0.10)";
+      g.fillRect(r() * c.width, r() * c.height, 1 + r() * 2.4, 1 + r() * 2.4);
+    }
+    // faint tile dots across the board
+    g.fillStyle = "rgba(210,205,180,0.07)";
+    for (i = 0; i <= 24; i++) for (k = 0; k <= 14; k++) g.fillRect(px(i) - 1.5, pz(k) - 1.5, 3, 3);
+    // paved court under the keep
+    g.fillStyle = "rgba(24,25,30,0.9)"; g.beginPath(); g.arc(px(BASE_X), pz(BASE_Z), 1.42 * GPX, 0, 6.2832); g.fill();
+    g.fillStyle = "#383a43"; g.beginPath(); g.arc(px(BASE_X), pz(BASE_Z), 1.3 * GPX, 0, 6.2832); g.fill();
+    // road
+    function trace(tiles, lead) {
+      g.beginPath();
+      g.moveTo(px(tiles[0][0] + 0.5 - lead), pz(tiles[0][1] + 0.5));
+      for (var q = 0; q < tiles.length; q++) g.lineTo(px(tiles[q][0] + 0.5), pz(tiles[q][1] + 0.5));
+    }
+    g.lineJoin = "miter"; g.lineCap = "butt";
+    trace(GROUND_TILES, 1.6); g.strokeStyle = "rgba(14,15,18,0.92)"; g.lineWidth = 0.96 * GPX; g.stroke();
+    trace(GROUND_TILES, 1.6); g.strokeStyle = "#34363f"; g.lineWidth = 0.8 * GPX; g.stroke();
+    // cobbles
+    for (i = 0; i + 1 < GROUND_TILES.length; i++) {
+      var ax = GROUND_TILES[i][0] + 0.5, az = GROUND_TILES[i][1] + 0.5, bx2 = GROUND_TILES[i + 1][0] + 0.5, bz2 = GROUND_TILES[i + 1][1] + 0.5;
+      if (i === 0) ax -= 1.6;
+      var len = Math.abs(bx2 - ax) + Math.abs(bz2 - az), ux = (bx2 - ax) / len, uz = (bz2 - az) / len;
+      for (var d = -0.3; d < len + 0.3; d += 0.2) for (k = -2; k <= 1; k++) {
+        var off = (k + 0.5) * 0.19 + (r() - 0.5) * 0.02, dd = d + ((k & 1) ? 0.1 : 0) + (r() - 0.5) * 0.03;
+        var cx = ax + ux * dd - uz * off, cz = az + uz * dd + ux * off, sh = r();
+        g.fillStyle = sh < 0.5 ? "rgba(0,0,0," + (0.10 + r() * 0.16).toFixed(3) + ")" : "rgba(214,206,190," + (0.03 + r() * 0.09).toFixed(3) + ")";
+        var w = (Math.abs(ux) > 0.5 ? 0.17 : 0.155) * GPX, h = (Math.abs(ux) > 0.5 ? 0.155 : 0.17) * GPX;
+        g.fillRect(px(cx) - w / 2, pz(cz) - h / 2, w, h);
+      }
+    }
+    // faint ground trace of the air lane
+    g.setLineDash([0.18 * GPX, 0.3 * GPX]);
+    trace(AIR_TILES, 1.6); g.strokeStyle = "rgba(96,224,255,0.22)"; g.lineWidth = 0.07 * GPX; g.stroke();
+    g.setLineDash([]);
+    // soft contact shadows under the build pads
+    for (i = 0; i < 16; i++) {
+      var sx = px(SLOT_TILES[i][0] + 0.5), sz = pz(SLOT_TILES[i][1] + 0.5);
+      var gr = g.createRadialGradient(sx, sz, 0.3 * GPX, sx, sz, 0.75 * GPX);
+      gr.addColorStop(0, "rgba(0,0,0,0.55)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = gr; g.fillRect(sx - GPX, sz - GPX, 2 * GPX, 2 * GPX);
+    }
+    // fade the terrain out toward the edges of the diorama
+    g.globalCompositeOperation = "destination-in";
+    var gx = g.createLinearGradient(0, 0, c.width, 0);
+    gx.addColorStop(0, "rgba(0,0,0,0)"); gx.addColorStop(px(-1.6) / c.width, "rgba(0,0,0,1)");
+    gx.addColorStop(px(25.6) / c.width, "rgba(0,0,0,1)"); gx.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gx; g.fillRect(0, 0, c.width, c.height);
+    var gz = g.createLinearGradient(0, 0, 0, c.height);
+    gz.addColorStop(0, "rgba(0,0,0,0)"); gz.addColorStop(pz(-1.3) / c.height, "rgba(0,0,0,1)");
+    gz.addColorStop(pz(15.3) / c.height, "rgba(0,0,0,1)"); gz.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gz; g.fillRect(0, 0, c.width, c.height);
+    g.globalCompositeOperation = "source-over";
+    var tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    tex.anisotropy = Math.max(1, Math.min(8, renderer.capabilities.getMaxAnisotropy() || 1));
+    return tex;
+  }
+  function glowTexture() {
+    var c = document.createElement("canvas"); c.width = c.height = 128;
+    var g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.25, "rgba(255,255,255,0.55)");
+    gr.addColorStop(0.6, "rgba(255,255,255,0.14)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  }
+
+  // =====================================================================
+  //  Static world: terrain, road, air lane, pads, rocks
+  // =====================================================================
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(GW, GH).rotateX(-HALF_PI),
+    patch(new THREE.MeshStandardMaterial({ map: groundTexture(), roughness: 1, metalness: 0, transparent: true })));
+  ground.position.set(12, 0, 7); ground.receiveShadow = true; ground.renderOrder = -10;
+  scene.add(ground);
+
+  var stoneMat = patch(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: true }));
+  (function () {
+    var parts = [], r = vrand, i, k;
+    for (i = 0; i < 16; i++) {
+      var sx = SLOT_TILES[i][0] + 0.5, sz = SLOT_TILES[i][1] + 0.5;
+      parts.push(P(cyl(0.47, 0.54, 0.1, 8), 0x3f424a, sx, 0.05, sz, 0, Math.PI / 8));
+      parts.push(P(cyl(0.4, 0.44, 0.06, 8), 0x595d67, sx, 0.13, sz, 0, Math.PI / 8));
+    }
+    function nearRoute(x, z, tiles, lim) {
+      for (var q = 0; q + 1 < tiles.length; q++) {
+        var x0 = Math.min(tiles[q][0], tiles[q + 1][0]) + 0.5, x1 = Math.max(tiles[q][0], tiles[q + 1][0]) + 0.5;
+        var z0 = Math.min(tiles[q][1], tiles[q + 1][1]) + 0.5, z1 = Math.max(tiles[q][1], tiles[q + 1][1]) + 0.5;
+        var dx = x < x0 ? x0 - x : x > x1 ? x - x1 : 0, dz = z < z0 ? z0 - z : z > z1 ? z - z1 : 0;
+        if (dx * dx + dz * dz < lim * lim) return true;
+      }
+      return false;
+    }
+    var rock = new THREE.IcosahedronGeometry(1, 0), placed = 0, guard = 0;
+    while (placed < 170 && guard++ < 4000) {
+      var x = -2.5 + r() * 29, z = -2 + r() * 18, ok = true;
+      if (nearRoute(x, z, GROUND_TILES, 0.85)) ok = false;
+      if (x < 0.4 && Math.abs(z - 2.5) < 0.9) ok = false;
+      for (k = 0; k < 16 && ok; k++) { var ddx = x - SLOT_TILES[k][0] - 0.5, ddz = z - SLOT_TILES[k][1] - 0.5; if (ddx * ddx + ddz * ddz < 0.75) ok = false; }
+      if ((x - BASE_X) * (x - BASE_X) + (z - BASE_Z) * (z - BASE_Z) < 3.2) ok = false;
+      if (!ok) continue;
+      var inside = x > 0 && x < 24 && z > 0 && z < 14;
+      var s = (inside ? 0.07 : 0.12) + r() * (inside ? 0.16 : 0.34), tone = r();
+      parts.push(P(rock, tone < 0.4 ? 0x5a5c55 : tone < 0.75 ? 0x6e6a5c : 0x4b4f4a, x, s * 0.35, z, r() * 3, r() * 3, r() * 3, s * (0.8 + r() * 0.7), s * (0.5 + r() * 0.5), s * (0.8 + r() * 0.7)));
+      placed++;
+    }
+    // a few broken wall stubs for flavour
+    for (i = 0; i < 9; i++) {
+      var wx = 1.5 + r() * 21, wz = 0.6 + r() * 12.8;
+      if (nearRoute(wx, wz, GROUND_TILES, 1.1) || nearRoute(wx, wz, AIR_TILES, 0.5)) continue;
+      var bad = false;
+      for (k = 0; k < 16; k++) { var ex = wx - SLOT_TILES[k][0] - 0.5, ez = wz - SLOT_TILES[k][1] - 0.5; if (ex * ex + ez * ez < 1.4) bad = true; }
+      if (bad || (wx - BASE_X) * (wx - BASE_X) + (wz - BASE_Z) * (wz - BASE_Z) < 5) continue;
+      var ang = r() * 3.14, hh = 0.18 + r() * 0.2;
+      parts.push(P(box(0.7, hh, 0.16), 0x66645c, wx, hh / 2, wz, 0, ang, 0));
+      parts.push(P(box(0.25, hh * 0.7, 0.17), 0x77746a, wx + Math.cos(ang) * 0.18, hh + hh * 0.3, wz - Math.sin(ang) * 0.18, 0, ang, 0));
+    }
+    var mesh = new THREE.Mesh(merge(parts), stoneMat);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    scene.add(mesh);
+  })();
+
+  var laneUniforms = { uTime: { value: 0 }, uDesat: uDesat };
+  (function () {
+    var pos = [], uv = [], dist = 0, i, hw = 0.2, y = 0.8;
+    for (i = 0; i + 1 < AIR_TILES.length; i++) {
+      var ax = AIR_TILES[i][0] + 0.5, az = AIR_TILES[i][1] + 0.5, bx = AIR_TILES[i + 1][0] + 0.5, bz = AIR_TILES[i + 1][1] + 0.5;
+      if (i === 0) ax -= 1.6;
+      var len = Math.abs(bx - ax) + Math.abs(bz - az), ux = (bx - ax) / len, uz = (bz - az) / len, nx = -uz * hw, nz = ux * hw;
+      ax -= ux * hw; az -= uz * hw; bx += ux * hw; bz += uz * hw; len += 2 * hw;
+      pos.push(ax + nx, y, az + nz, ax - nx, y, az - nz, bx + nx, y, bz + nz, ax - nx, y, az - nz, bx - nx, y, bz - nz, bx + nx, y, bz + nz);
+      uv.push(dist, 1, dist, 0, dist + len, 1, dist, 0, dist + len, 0, dist + len, 1);
+      dist += len - 2 * hw;
+    }
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+    var mat = new THREE.ShaderMaterial({
+      uniforms: laneUniforms, transparent: true, depthWrite: false, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
+      blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor, side: THREE.DoubleSide,
+      vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+      fragmentShader: "uniform float uTime; uniform float uDesat; varying vec2 vUv; void main(){ float e = 1.0 - abs(vUv.y - 0.5) * 2.0; float core = e * e; float dash = 0.45 + 0.55 * smoothstep(0.55, 0.9, fract(vUv.x * 0.8 - uTime * 0.9)); float fade = smoothstep(0.0, 1.6, vUv.x); vec3 col = vec3(0.16, 0.62, 0.85) * core * dash * fade * 0.5; col = mix(col, vec3(dot(col, vec3(0.299, 0.587, 0.114))), uDesat); gl_FragColor = vec4(col, 1.0); }"
+    });
+    var lane = new THREE.Mesh(geo, mat); lane.frustumCulled = false; lane.renderOrder = 2;
+    scene.add(lane);
+  })();
+
+  // =====================================================================
+  //  Instance pools
+  // =====================================================================
+  var WHITE = new THREE.Color(1, 1, 1);
+  var tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3(), tmpE = new THREE.Euler();
+  var ALL_POOLS = [];
+  function Pool(geo, mat, cap, shadow, order) {
+    this.cap = cap; this.n = 0;
+    ALL_POOLS.push(this);
+    var mesh = this.mesh = new THREE.InstancedMesh(geo, mat, cap);
+    mesh.frustumCulled = false; mesh.castShadow = !!shadow; mesh.receiveShadow = false;
+    if (order) mesh.renderOrder = order;
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.setColorAt(0, WHITE);
+    mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+    this.m = mesh.instanceMatrix.array; this.c = mesh.instanceColor.array;
+    mesh.count = 0; mesh.visible = false;
+    scene.add(mesh);
+  }
+  Pool.prototype.begin = function () { this.n = 0; };
+  Pool.prototype.col = function (r, g, b) { var o = this.n * 3, c = this.c; c[o] = r; c[o + 1] = g; c[o + 2] = b; this.n++; };
+  Pool.prototype.addYaw = function (x, y, z, yaw, sx, sy, sz, r, g, b) {
+    if (this.n >= this.cap) return;
+    var o = this.n * 16, m = this.m, c = Math.cos(yaw), s = Math.sin(yaw);
+    m[o] = c * sx; m[o + 1] = 0; m[o + 2] = -s * sx; m[o + 3] = 0;
+    m[o + 4] = 0; m[o + 5] = sy; m[o + 6] = 0; m[o + 7] = 0;
+    m[o + 8] = s * sz; m[o + 9] = 0; m[o + 10] = c * sz; m[o + 11] = 0;
+    m[o + 12] = x; m[o + 13] = y; m[o + 14] = z; m[o + 15] = 1;
+    this.col(r, g, b);
+  };
+  Pool.prototype.addBill = function (x, y, z, sx, sy, r, g, b) {   // camera-facing quad
+    if (this.n >= this.cap) return;
+    var o = this.n * 16, m = this.m;
+    m[o] = camRight.x * sx; m[o + 1] = camRight.y * sx; m[o + 2] = camRight.z * sx; m[o + 3] = 0;
+    m[o + 4] = camUp.x * sy; m[o + 5] = camUp.y * sy; m[o + 6] = camUp.z * sy; m[o + 7] = 0;
+    m[o + 8] = camFwd.x; m[o + 9] = camFwd.y; m[o + 10] = camFwd.z; m[o + 11] = 0;
+    m[o + 12] = x; m[o + 13] = y; m[o + 14] = z; m[o + 15] = 1;
+    this.col(r, g, b);
+  };
+  Pool.prototype.addEuler = function (x, y, z, rx, ry, rz, sx, sy, sz, r, g, b) {
+    if (this.n >= this.cap) return;
+    tmpM.compose(tmpV.set(x, y, z), tmpQ.setFromEuler(tmpE.set(rx, ry, rz)), tmpS.set(sx, sy, sz));
+    tmpM.toArray(this.m, this.n * 16);
+    this.col(r, g, b);
+  };
+  Pool.prototype.addBeam = function (ax, ay, az, bx, by, bz, w, r, g, b) {   // unit box stretched from a to b
+    if (this.n >= this.cap) return;
+    var dx = bx - ax, dy = by - ay, dz = bz - az, len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (len < 1e-5) return;
+    dx /= len; dy /= len; dz /= len;
+    var rx = dz, rz = -dx, rl = Math.sqrt(rx * rx + rz * rz), ry = 0;       // right = up x dir
+    if (rl < 1e-4) { rx = 1; rz = 0; rl = 1; }
+    rx /= rl; rz /= rl;
+    var ux = dy * rz - dz * ry, uy = dz * rx - dx * rz, uz = dx * ry - dy * rx;   // up = dir x right
+    var o = this.n * 16, m = this.m;
+    m[o] = rx * w; m[o + 1] = 0; m[o + 2] = rz * w; m[o + 3] = 0;
+    m[o + 4] = ux * w; m[o + 5] = uy * w; m[o + 6] = uz * w; m[o + 7] = 0;
+    m[o + 8] = dx * len; m[o + 9] = dy * len; m[o + 10] = dz * len; m[o + 11] = 0;
+    m[o + 12] = ax; m[o + 13] = ay; m[o + 14] = az; m[o + 15] = 1;
+    this.col(r, g, b);
+  };
+  Pool.prototype.end = function () {
+    var mesh = this.mesh;
+    mesh.count = this.n; mesh.visible = this.n > 0;
+    mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true;
+  };
+
+  // =====================================================================
+  //  Enemy models (built facing +Z, origin on the ground)
+  // =====================================================================
+  var ENEMY_H = [0.74, 0.5, 0.42, 0.98, 0.72, 1.08, 0.36];        // health-bar height
+  var ENEMY_BW = [0.44, 0.38, 0.44, 0.7, 0.52, 0.46, 0.28];      // health-bar width
+  var ENEMY_RGB = [lin(0x8fa672), lin(0xffd42a), lin(0x55eaff), lin(0xf0600e), lin(0xa04be0), lin(0xf4f4ee), lin(0xb86bff)];
+  var enemyGeo = [
+    merge([P(cyl(0.13, 0.2, 0.3, 7), 0x8fa672, 0, 0.17, 0), P(sph(0.125), 0xa9bd8a, 0, 0.42, 0.01),
+      P(box(0.22, 0.15, 0.07), 0x5e7350, 0, 0.22, 0.16), P(box(0.3, 0.09, 0.18), 0x6f8459, 0, 0.3, -0.02)]),
+    merge([P(new THREE.ConeGeometry(0.14, 0.56, 5), 0xffd42a, 0, 0.2, 0.04, HALF_PI, 0, 0),
+      P(box(0.05, 0.2, 0.22), 0xe89a12, 0.1, 0.27, -0.2, 0, 0, -0.3), P(box(0.05, 0.2, 0.22), 0xe89a12, -0.1, 0.27, -0.2, 0, 0, 0.3)]),
+    merge([P(new THREE.OctahedronGeometry(0.2, 0), 0x2fd2f2, 0, 0, 0, 0, 0, 0, 1, 1.35, 1),
+      P(new THREE.OctahedronGeometry(0.13, 0), 0x18a8d8, 0.24, 0.02, -0.06, 0, 0, 0.5, 1.3, 0.45, 0.8),
+      P(new THREE.OctahedronGeometry(0.13, 0), 0x18a8d8, -0.24, 0.02, -0.06, 0, 0, -0.5, 1.3, 0.45, 0.8)]),
+    merge([P(box(0.54, 0.44, 0.48), 0x4b5059, 0, 0.3, 0), P(box(0.24, 0.17, 0.24), 0x363a42, 0, 0.6, 0.07),
+      P(box(0.15, 0.11, 0.44), 0xf0600e, 0.32, 0.5, 0), P(box(0.15, 0.11, 0.44), 0xf0600e, -0.32, 0.5, 0),
+      P(box(0.32, 0.18, 0.06), 0xf0600e, 0, 0.3, 0.26)]),
+    merge([P(sph(0.18), 0xa04be0, 0, 0.2, 0.13), P(sph(0.18), 0x8d3ad0, -0.15, 0.2, -0.1), P(sph(0.18), 0x8d3ad0, 0.15, 0.2, -0.1),
+      P(sph(0.14), 0xc98bff, 0, 0.38, 0)]),
+    merge([P(cyl(0.1, 0.17, 0.5, 8), 0xf4f4ee, 0, 0.27, 0), P(sph(0.105), 0xffffff, 0, 0.6, 0),
+      P(new THREE.TorusGeometry(0.2, 0.035, 6, 14), 0x58f08a, 0, 0.8, 0, HALF_PI, 0, 0),
+      P(box(0.06, 0.2, 0.05), 0x44d877, 0, 0.3, 0.14), P(box(0.18, 0.06, 0.05), 0x44d877, 0, 0.32, 0.14)]),
+    merge([P(new THREE.IcosahedronGeometry(0.115, 0), 0xb86bff, 0, 0.13, 0)])
+  ];
+  var enemyPool = [], enemyPoolSlow = [];
+  (function () {
+    for (var t = 0; t < 7; t++) {
+      var cap = Math.max(8, REP.peak[t] + 4), isWisp = t === 2;
+      var base = { vertexColors: true, roughness: 0.72, metalness: 0.05, flatShading: true };
+      var m1 = new THREE.MeshStandardMaterial(base), m2 = new THREE.MeshStandardMaterial(base);
+      if (isWisp) { m1.emissive = lin(0x0fa0d8); m1.emissiveIntensity = 0.55; }
+      else if (t === 5) { m1.emissive = lin(0x2a4a33); m1.emissiveIntensity = 0.5; }
+      m2.color = new THREE.Color(0.5, 0.72, 1.0); m2.emissive = new THREE.Color(0.1, 0.34, 0.75); m2.emissiveIntensity = isWisp ? 1.0 : 0.75;
+      enemyPool.push(new Pool(enemyGeo[t], patch(m1), cap, true));
+      enemyPoolSlow.push(new Pool(enemyGeo[t], patch(m2), cap, true));
+    }
+  })();
+
+  // =====================================================================
+  //  Turret models: static base + aiming head, per type
+  // =====================================================================
+  var TUR_MUZZLE = [0.6, 0.74, 0.95, 0.97, 0.78];      // height the shot leaves from
+  var TUR_REACH = [0.55, 0.42, 0.0, 0.75, 0.2];        // muzzle distance from the pivot
+  var TUR_RGB = [lin(0x6a9ad8), lin(0xd08a3c), lin(0xeaf7ff), lin(0xe8203f), lin(0x22c9b2)];
+  var turBaseGeo = [
+    merge([P(cyl(0.2, 0.27, 0.3, 8), 0x33506f, 0, 0.31, 0)]),
+    merge([P(cyl(0.34, 0.39, 0.22, 10), 0x6f4722, 0, 0.27, 0)]),
+    merge([P(cyl(0.23, 0.32, 0.16, 6), 0x86a9c4, 0, 0.24, 0)]),
+    merge([P(box(0.4, 0.2, 0.4), 0x5f1020, 0, 0.26, 0), P(box(0.28, 0.1, 0.28), 0x7c1629, 0, 0.41, 0)]),
+    merge([P(cyl(0.3, 0.36, 0.2, 4), 0x0f5d54, 0, 0.26, 0, 0, Math.PI / 4, 0)])
+  ];
+  var turHeadGeo = [
+    merge([P(box(0.27, 0.2, 0.32), 0x6a9ad8, 0, 0.56, 0), P(cyl(0.04, 0.04, 0.55, 6), 0xc4dcf7, 0, 0.6, 0.38, HALF_PI, 0, 0),
+      P(box(0.1, 0.07, 0.2), 0x40648f, 0, 0.7, -0.04)]),
+    merge([P(sph(0.25, 10, 7), 0xc98238, 0, 0.5, 0), P(cyl(0.125, 0.15, 0.46, 10), 0xe6a455, 0, 0.64, 0.24, HALF_PI - 0.45, 0, 0),
+      P(cyl(0.15, 0.15, 0.07, 10), 0x7a4d22, 0, 0.74, 0.44, HALF_PI - 0.45, 0, 0)]),
+    merge([P(new THREE.OctahedronGeometry(0.2, 0), 0xf2fbff, 0, 0.78, 0, 0, 0, 0, 1, 2.3, 1),
+      P(new THREE.OctahedronGeometry(0.11, 0), 0xb9e6ff, 0.2, 0.46, 0.05, 0, 0, -0.3, 1, 1.7, 1),
+      P(new THREE.OctahedronGeometry(0.11, 0), 0xb9e6ff, -0.14, 0.46, 0.16, 0.25, 0, 0.3, 1, 1.7, 1),
+      P(new THREE.OctahedronGeometry(0.11, 0), 0xb9e6ff, -0.06, 0.46, -0.2, -0.3, 0, 0.1, 1, 1.7, 1)]),
+    merge([P(box(0.15, 0.62, 0.15), 0xc81c38, 0, 0.74, -0.06), P(box(0.07, 0.07, 1.0), 0xff5468, 0, 0.97, 0.22),
+      P(new THREE.ConeGeometry(0.075, 0.24, 4), 0xffb0b8, 0, 0.97, 0.82, HALF_PI, 0, 0), P(box(0.24, 0.1, 0.2), 0x8c1428, 0, 1.0, -0.12)]),
+    merge([P(box(0.42, 0.15, 0.34), 0x22c9b2, 0, 0.45, 0),
+      P(cyl(0.05, 0.05, 0.4, 6), 0x8af5e6, 0.12, 0.68, 0.12, 0.6, 0, 0), P(cyl(0.05, 0.05, 0.4, 6), 0x8af5e6, -0.12, 0.68, 0.12, 0.6, 0, 0),
+      P(cyl(0.05, 0.05, 0.4, 6), 0x8af5e6, 0.12, 0.68, -0.06, 0.6, 0, 0), P(cyl(0.05, 0.05, 0.4, 6), 0x8af5e6, -0.12, 0.68, -0.06, 0.6, 0, 0)])
+  ];
+  var turBasePool = [], turHeadPool = [];
+  (function () {
+    for (var t = 0; t < 5; t++) {
+      var mb = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0.25, flatShading: true });
+      var mh = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: t === 2 ? 0.25 : 0.5, metalness: t === 2 ? 0 : 0.3, flatShading: true });
+      if (t === 2) { mh.emissive = lin(0x4f9fd0); mh.emissiveIntensity = 0.55; }
+      if (t === 3) { mh.emissive = lin(0x5a0612); mh.emissiveIntensity = 0.6; }
+      turBasePool.push(new Pool(turBaseGeo[t], patch(mb), 16, true));
+      turHeadPool.push(new Pool(turHeadGeo[t], patch(mh), 16, true));
+    }
+  })();
+
+  // =====================================================================
+  //  Effect pools
+  // =====================================================================
+  var glowTex = glowTexture();
+  // additive light that leaves the canvas alpha alone, so glows also read over the page backdrop
+  var ADDITIVE = { transparent: true, depthWrite: false, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
+    blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor };
+  function addMat(color) {
+    var m = new THREE.MeshBasicMaterial({ color: color || 0xffffff, toneMapped: false });
+    for (var k in ADDITIVE) m[k] = ADDITIVE[k];
+    return patch(m);
+  }
+  var beamGeo = new THREE.BoxGeometry(1, 1, 1); beamGeo.translate(0, 0, 0.5);
+  var ringGeo = new THREE.RingGeometry(0.84, 1, 44).rotateX(-HALF_PI);
+  var discGeo = new THREE.CircleGeometry(1, 20).rotateX(-HALF_PI);
+  var quadGeo = new THREE.PlaneGeometry(1, 1);
+  var beamPool = new Pool(beamGeo, addMat(), 96, false, 5);
+  var ringMat = addMat(); ringMat.side = THREE.DoubleSide;
+  var ringPool = new Pool(ringGeo, ringMat, 160, false, 4);
+  var thinPool = new Pool(new THREE.RingGeometry(0.93, 1, 72).rotateX(-HALF_PI), ringMat, 120, false, 4);
+  var glowMat = addMat(); glowMat.map = glowTex;
+  var glowPool = new Pool(quadGeo, glowMat, Math.max(400, REP.peak[2] + REP.peak[5] + 300), false, 6);
+  var blobPool = new Pool(discGeo, patch(new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, depthWrite: false })), Math.max(8, REP.peak[2] + 4), false, 1);
+  var haloPool = new Pool(discGeo, addMat(), Math.max(8, REP.peak[5] + 4), false, 1);
+  var pipPool = new Pool(new THREE.OctahedronGeometry(0.15, 0), patch(new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })), 48, false);
+  var debrisPool = new Pool(new THREE.BoxGeometry(1, 1, 1), patch(new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0, flatShading: true })), 1400, false);
+  var shellPool = new Pool(sph(0.09, 8, 6), patch(new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })), 32, false);
+  var barBgPool = new Pool(quadGeo, patch(new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })), REP.peakAll + 8, false);
+  var barFgPool = new Pool(quadGeo, patch(new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false })), REP.peakAll + 8, false);
+
+  // =====================================================================
+  //  The keep: ten wall chunks (one per base HP) around a core
+  // =====================================================================
+  var keepStone = patch(new THREE.MeshStandardMaterial({ color: lin(0xa39a8a), roughness: 0.9, metalness: 0, flatShading: true }));
+  var keepDark = patch(new THREE.MeshStandardMaterial({ color: lin(0x7e776b), roughness: 0.95, metalness: 0, flatShading: true }));
+  var keepRoof = patch(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0, flatShading: true }));
+  var keepParts = [];
+  (function () {
+    function add(geo, mat, x, y, z, chunk, hh) {
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.castShadow = true; mesh.receiveShadow = true;
+      scene.add(mesh);
+      keepParts.push({ mesh: mesh, x: BASE_X + x, y: y, z: BASE_Z + z, ox: x, oz: z, chunk: chunk, hh: hh, k: keepParts.length });
+    }
+    var T = 0.58, sx = [-1, -1, 1, 1], sz = [1, -1, 1, -1], capChunk = [0, 2, 4, 6], i;
+    for (i = 0; i < 4; i++) {
+      add(box(0.36, 0.8, 0.36), keepDark, sx[i] * T, 0.4, sz[i] * T, -1, 0.3);
+      add(merge([P(box(0.46, 0.2, 0.46), 0xffffff, 0, -0.04, 0), P(box(0.14, 0.12, 0.14), 0xffffff, 0.16, 0.12, 0.16), P(box(0.14, 0.12, 0.14), 0xffffff, -0.16, 0.12, 0.16),
+        P(box(0.14, 0.12, 0.14), 0xffffff, 0.16, 0.12, -0.16), P(box(0.14, 0.12, 0.14), 0xffffff, -0.16, 0.12, -0.16)]), keepStone, sx[i] * T, 0.94, sz[i] * T, capChunk[i], 0.14);
+    }
+    add(box(0.16, 0.54, 0.82), keepStone, -T, 0.27, 0, 1, 0.1);     // west wall (faces the road)
+    add(box(0.82, 0.54, 0.16), keepStone, 0, 0.27, T, 3, 0.1);      // south wall
+    add(box(0.82, 0.54, 0.16), keepStone, 0, 0.27, -T, 5, 0.1);     // north wall
+    add(box(0.16, 0.54, 0.82), keepStone, T, 0.27, 0, 7, 0.1);      // east wall
+    add(box(0.58, 1.0, 0.58), keepDark, 0, 0.5, 0, -1, 0.3);        // central tower base (core)
+    add(merge([P(new THREE.ConeGeometry(0.42, 0.52, 4), 0x8e3a30, 0, 0, 0, 0, Math.PI / 4, 0), P(cyl(0.015, 0.015, 0.5, 5), 0x3a3a3a, 0, 0.42, 0),
+      P(box(0.26, 0.14, 0.02), 0x3f7fe0, 0.14, 0.58, 0)]), keepRoof, 0, 1.72, 0, 8, 0.2);
+    add(box(0.48, 0.46, 0.48), keepStone, 0, 1.23, 0, 9, 0.22);     // upper storey: the last chunk
+  })();
+
+  // =====================================================================
+  //  World rendering: a pure function of simTime
+  // =====================================================================
+  var DEBRIS_N = [5, 4, 5, 9, 6, 5, 3], DEBRIS_S = [1, 0.8, 0.9, 1.5, 1.1, 1, 0.6], ENEMY_SCALE = 1.2;
+  var GRAV = 9.5;
+  function easeOut(v) { v = clamp01(v); return 1 - (1 - v) * (1 - v); }
+  function lerpAngle(a, b, f) {
+    var d = b - a;
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    return a + d * f;
+  }
+  function shotYaw(s, sh) { return Math.atan2(sh.x - (SLOT_TILES[s][0] + 0.5), sh.y - (SLOT_TILES[s][1] + 0.5)); }
+  function aimYaw(s, t) {
+    var a = REP.slotShots[s], n = a.length, tk = t * TPS, lo = 0, hi = n;
+    if (n === 0) return -HALF_PI;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (a[mid].tick <= tk) lo = mid + 1; else hi = mid; }
+    var idx = lo - 1, cur = idx >= 0 ? shotYaw(s, a[idx]) : -HALF_PI;
+    if (idx + 1 < n) {
+      var nt = a[idx + 1].tick * TICK, lead = idx >= 0 ? Math.min(0.22, (nt - a[idx].tick * TICK) * 0.7) : 0.22;
+      var u = (t - (nt - lead)) / lead;
+      if (u > 0) cur = lerpAngle(cur, shotYaw(s, a[idx + 1]), smooth(u));
+    }
+    return cur;
+  }
+  function recoil(s, t) {
+    var a = REP.slotShots[s], n = a.length, tk = t * TPS, lo = 0, hi = n;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (a[mid].tick <= tk) lo = mid + 1; else hi = mid; }
+    if (lo === 0) return 0;
+    return Math.exp(-(t - a[lo - 1].tick * TICK) * 16);
+  }
+
+  function drawEnemies(k, f, animT) {
+    var list = REP.frames[k], n = list.length, i, t;
+    for (t = 0; t < 7; t++) { enemyPool[t].begin(); enemyPoolSlow[t].begin(); }
+    blobPool.begin(); haloPool.begin(); barBgPool.begin(); barFgPool.begin();
+    for (i = 0; i < n; i++) {
+      var tr = REP.tracks[list[i]], j = k - tr.first, len = tr.x.length, ty = tr.type;
+      var x0 = tr.x[j], z0 = tr.y[j], h0 = tr.hp[j], x1, z1, h1;
+      if (j + 1 < len) { x1 = tr.x[j + 1]; z1 = tr.y[j + 1]; h1 = tr.hp[j + 1]; }
+      else if (tr.end !== 0 && tr.endTick === k + 1) { x1 = tr.ex; z1 = tr.ey; h1 = tr.end === 1 ? 0 : h0; }
+      else { x1 = x0; z1 = z0; h1 = h0; }
+      var x = x0 + (x1 - x0) * f, z = z0 + (z1 - z0) * f;
+      // heading over a few ticks, so corners turn smoothly
+      var ja = j - 2 < 0 ? 0 : j - 2, jb = j + 3 >= len ? len - 1 : j + 3, jc = ja + 1 >= len ? len - 1 : ja + 1, jd = jb + 1 >= len ? len - 1 : jb + 1;
+      var ax = tr.x[jb] - tr.x[ja], az = tr.y[jb] - tr.y[ja], bx = tr.x[jd] - tr.x[jc], bz = tr.y[jd] - tr.y[jc];
+      if (tr.end !== 0) {
+        if (j + 3 >= len) { ax += tr.ex - tr.x[len - 1]; az += tr.ey - tr.y[len - 1]; }
+        if (j + 4 >= len) { bx += tr.ex - tr.x[len - 1]; bz += tr.ey - tr.y[len - 1]; }
+      }
+      var hx = ax + (bx - ax) * f, hz = az + (bz - az) * f, hl = Math.sqrt(hx * hx + hz * hz);
+      if (hl < 1e-6) { hx = 1; hz = 0; hl = 1; }
+      hx /= hl; hz /= hl;
+      var yaw = Math.atan2(hx, hz), id = tr.id, age = animT - tr.born * TICK;
+      var grow = (0.35 + 0.65 * smooth(age / 0.22)) * ENEMY_SCALE;
+      var lat = (rt(id * 3 + 1) - 0.5) * (ty === 6 ? 0.56 : ty === 3 ? 0.22 : 0.36), along = (rt(id * 3 + 2) - 0.5) * (ty === 6 ? 0.3 : 0.12), y = 0;
+      if (ty === 6 && tr.parent) {              // splitlings burst out of the dying splitter
+        var bu = clamp01(age / 0.32);
+        lat *= easeOut(bu); along *= easeOut(bu); y = Math.sin(bu * Math.PI) * 0.38;
+      }
+      x += hz * lat + hx * along; z += -hx * lat + hz * along;
+      var sx = grow, sy = grow, sz = grow, ph = animT * 6 + id * 1.7;
+      if (ty === 2) { y = 0.8 + Math.sin(animT * 2.6 + id) * 0.07; yaw += Math.sin(animT * 1.7 + id) * 0.25; }
+      else if (ty === 1) { y += Math.abs(Math.sin(ph * 1.8)) * 0.05; }
+      else if (ty === 4) { sy *= 1 + Math.sin(ph) * 0.07; sx *= 1 - Math.sin(ph) * 0.04; sz = sx; }
+      else if (ty === 3) { yaw += Math.sin(ph * 0.6) * 0.07; y += Math.abs(Math.sin(ph * 0.6)) * 0.025; }
+      else if (ty === 0) { yaw += Math.sin(ph) * 0.1; y += Math.abs(Math.sin(ph)) * 0.03; }
+      else if (ty === 6) { y += Math.abs(Math.sin(ph * 1.5)) * 0.05; }
+      var slowed = tr.slow[j] === 1;
+      (slowed ? enemyPoolSlow[ty] : enemyPool[ty]).addYaw(x, y, z, yaw, sx, sy, sz, 1, 1, 1);
+      if (ty === 2) {
+        blobPool.addYaw(x + 0.12, 0.035, z - 0.08, 0, 0.22 * grow, 1, 0.18 * grow, 1, 1, 1);
+        var gl = 0.5 + 0.12 * Math.sin(animT * 5 + id);
+        if (slowed) glowPool.addBill(x, y, z, 1.05 * grow, 1.05 * grow, 0.25 * gl, 0.45 * gl, 1.0 * gl);
+        else glowPool.addBill(x, y, z, 1.0 * grow, 1.0 * grow, 0.03 * gl, 0.5 * gl, 0.75 * gl);
+      } else if (ty === 5) {
+        var hp = 0.2 + 0.06 * Math.sin(animT * 4 + id);
+        haloPool.addYaw(x, 0.04, z, 0, 0.5 * grow, 1, 0.5 * grow, 0.1 * hp, 1.0 * hp, 0.35 * hp);
+        glowPool.addBill(x, 0.55, z, 1.25 * grow, 1.25 * grow, 0.05, 0.42, 0.14);
+      }
+      // health bar
+      var frac = clamp01((h0 + (h1 - h0) * f) / tr.maxHp), bw = ENEMY_BW[ty], by = (ty === 2 ? y : 0) + ENEMY_H[ty] * grow / ENEMY_SCALE + 0.1;
+      barBgPool.addBill(x, by, z, bw + 0.04, 0.09, 0.012, 0.014, 0.02);
+      if (frac > 0) {
+        var off = -(1 - frac) * bw * 0.5, cr, cg, cb;
+        if (frac > 0.5) { cr = (1 - frac) * 2 * 0.9 + 0.08; cg = 0.85; cb = 0.12; } else { cr = 0.98; cg = frac * 2 * 0.8 + 0.05; cb = 0.05; }
+        barFgPool.addBill(x + camRight.x * off + camFwd.x * 0.03, by + camRight.y * off + camFwd.y * 0.03, z + camRight.z * off + camFwd.z * 0.03, bw * frac, 0.052, cr, cg, cb);
+      }
+    }
+    for (t = 0; t < 7; t++) { enemyPool[t].end(); enemyPoolSlow[t].end(); }
+    blobPool.end(); haloPool.end(); barBgPool.end(); barFgPool.end();
+  }
+
+  function drawTurrets(animT) {
+    var s, t, p;
+    for (t = 0; t < 5; t++) { turBasePool[t].begin(); turHeadPool[t].begin(); }
+    pipPool.begin();
+    for (s = 0; s < 16; s++) {
+      var st = REP.slotStates[s], q = st.length - 1;
+      while (q > 0 && st[q].t > animT) q--;
+      var cur = st[q], sx = SLOT_TILES[s][0] + 0.5, sz = SLOT_TILES[s][1] + 0.5, age = animT - cur.t, sc = 1, type = cur.type, tier = cur.tier, sink = 0;
+      if (type < 0) {
+        if (cur.kind !== "S" || age >= 0.3) continue;
+        type = cur.prevType; tier = 0; sc = 1 - age / 0.3; sink = -0.25 * age / 0.3;   // sold: collapses into the pad
+      } else if (cur.kind === "B") {
+        var u = clamp01(age / 0.32);
+        sc = (1 - Math.pow(1 - u, 3)) * (1 + 0.28 * Math.sin(u * Math.PI));
+        if (sc < 0.02) sc = 0.02;
+      }
+      var yaw = aimYaw(s, animT), kick = recoil(s, animT) * (type === 1 ? 0.14 : type === 3 ? 0.1 : 0.06);
+      turBasePool[type].addYaw(sx, sink, sz, 0, sc, sc, sc, 1, 1, 1);
+      turHeadPool[type].addYaw(sx - Math.sin(yaw) * kick, sink, sz - Math.cos(yaw) * kick, yaw, sc, sc * (1 + (type === 1 ? kick * 0.6 : 0)), sc, 1, 1, 1);
+      for (p = 0; p < tier; p++) {
+        var ps = 1, py = 0.27;
+        if (cur.kind === "U" && p === tier - 1) { var pu = clamp01(age / 0.45); ps = pu < 1 ? 1 + 1.6 * Math.sin(pu * Math.PI) : 1; py += 0.3 * Math.sin(pu * Math.PI); }
+        else if (cur.kind === "B") ps = sc;
+        var px = sx + (p - (tier - 1) / 2) * 0.34, pz = sz + 0.62;
+        pipPool.addYaw(px, py, pz, animT * 1.8 + p, ps, ps * 1.2, ps, 1.0, 0.86, 0.3);
+        glowPool.addBill(px, py, pz, 0.8 * ps, 0.8 * ps, 0.75, 0.5, 0.1);
+      }
+    }
+    for (t = 0; t < 5; t++) { turBasePool[t].end(); turHeadPool[t].end(); }
+    pipPool.end();
+  }
+
+  function drawShots(k, animT) {
+    var S = REP.shots, i = lowerBound(S, k - 4), n = S.length;
+    for (; i < n; i++) {
+      var sh = S[i], ts = sh.tick * TICK;
+      if (ts > animT) break;
+      var u = (animT - ts) / SHOT_LIFE;
+      if (u >= 1 || u < 0) continue;
+      var s = sh.slot, sx = SLOT_TILES[s][0] + 0.5, sz = SLOT_TILES[s][1] + 0.5, type = sh.type;
+      var dx = sh.x - sx, dz = sh.y - sz, dl = Math.sqrt(dx * dx + dz * dz) || 1, reach = TUR_REACH[type];
+      var mx = sx + dx / dl * reach, my = TUR_MUZZLE[type], mz = sz + dz / dl * reach;
+      var tx = sh.x, tyy = sh.air ? 0.8 : 0.3, tz = sh.y, w, a, v, h, t0, t1;
+      if (type === 0) {                    // bolt: thin tracer
+        h = Math.min(1, u / 0.55); t0 = Math.max(0, h - 0.4);
+        if (u < 0.75) beamPool.addBeam(mx + (tx - mx) * t0, my + (tyy - my) * t0, mz + (tz - mz) * t0, mx + (tx - mx) * h, my + (tyy - my) * h, mz + (tz - mz) * h, 0.055, 1.3, 1.7, 2.2);
+        if (u < 0.3) glowPool.addBill(mx, my, mz, 0.45 * (1 - u / 0.3), 0.45 * (1 - u / 0.3), 0.6, 0.8, 1.0);
+        if (u > 0.5) { a = 1 - (u - 0.5) / 0.5; glowPool.addBill(tx, tyy, tz, 0.5 * a + 0.1, 0.5 * a + 0.1, 0.7 * a, 0.9 * a, 1.2 * a); }
+      } else if (type === 1) {             // cannon: arcing shell, then a burst ring of the splash radius
+        if (u < 0.5) {
+          h = u / 0.5; var arc = Math.sin(h * Math.PI) * (0.45 + dl * 0.16);
+          shellPool.addYaw(mx + (tx - mx) * h, my + (tyy - my) * h + arc, mz + (tz - mz) * h, 0, 1, 1, 1, 1.0, 0.72, 0.3);
+          glowPool.addBill(mx + (tx - mx) * h, my + (tyy - my) * h + arc, mz + (tz - mz) * h, 0.5, 0.5, 0.9, 0.45, 0.1);
+          if (u < 0.2) glowPool.addBill(mx, my + 0.1, mz, 0.9 * (1 - u / 0.2), 0.9 * (1 - u / 0.2), 1.0, 0.6, 0.2);
+        }
+        if (u >= 0.42) {
+          v = (u - 0.42) / 0.58; a = (1 - v) * (1 - v); w = SPLASH_R[1] * (0.35 + 0.65 * easeOut(v));
+          ringPool.addYaw(tx, 0.07, tz, 0, w, 1, w, 2.2 * a, 1.05 * a, 0.25 * a);
+          glowPool.addBill(tx, 0.3, tz, 1.7 * (1 - v * 0.5), 1.7 * (1 - v * 0.5), 1.0 * a, 0.5 * a, 0.12 * a);
+        }
+      } else if (type === 2) {             // frost: pale beam
+        a = 1 - u;
+        beamPool.addBeam(mx, my, mz, tx, tyy, tz, 0.07 * (1 - 0.4 * u), 0.9 * a, 1.5 * a, 1.9 * a);
+        beamPool.addBeam(mx, my, mz, tx, tyy, tz, 0.2, 0.1 * a, 0.25 * a, 0.36 * a);
+        glowPool.addBill(tx, tyy, tz, 0.75, 0.75, 0.4 * a, 0.75 * a, 1.0 * a);
+        glowPool.addBill(mx, my, mz, 0.5, 0.5, 0.35 * a, 0.6 * a, 0.8 * a);
+      } else if (type === 3) {             // lance: thick crimson beam with a flash
+        a = 1 - u * u;
+        beamPool.addBeam(mx, my, mz, tx, tyy, tz, 0.17 * (1 - 0.55 * u), 2.4 * a, 0.16 * a, 0.3 * a);
+        beamPool.addBeam(mx, my, mz, tx, tyy, tz, 0.055, 2.4 * a, 1.5 * a, 1.5 * a);
+        glowPool.addBill(mx, my, mz, 1.1 * (1 - u * 0.5), 1.1 * (1 - u * 0.5), 1.2 * a, 0.2 * a, 0.25 * a);
+        glowPool.addBill(tx, tyy, tz, 1.5 * (1 - u * 0.4), 1.5 * (1 - u * 0.4), 1.4 * a, 0.3 * a, 0.3 * a);
+      } else {                             // flak: tracer up, then a teal ring bursting in the air
+        if (u < 0.4) {
+          h = u / 0.35; if (h > 1) h = 1; t0 = Math.max(0, h - 0.45);
+          beamPool.addBeam(mx + (tx - mx) * t0, my + (tyy - my) * t0, mz + (tz - mz) * t0, mx + (tx - mx) * h, my + (tyy - my) * h, mz + (tz - mz) * h, 0.05, 0.5, 2.0, 1.7);
+        }
+        if (u >= 0.3) {
+          v = (u - 0.3) / 0.7; a = (1 - v) * (1 - v); w = SPLASH_R[4] * (0.3 + 0.7 * easeOut(v));
+          ringPool.addYaw(tx, 0.8, tz, 0, w, 1, w, 0.35 * a, 2.2 * a, 1.8 * a);
+          glowPool.addBill(tx, 0.8, tz, 1.2 * (1 - v * 0.4), 1.2 * (1 - v * 0.4), 0.1 * a, 0.8 * a, 0.65 * a);
+        }
+      }
+    }
+  }
+
+  function drawEvents(k, animT) {
+    var i, j, n, tau, a, v;
+    // mender heal pulses
+    var H = REP.heals;
+    for (i = lowerBound(H, k - 8), n = H.length; i < n; i++) {
+      tau = animT - H[i].tick * TICK; if (tau < 0) break; if (tau >= 0.4) continue;
+      v = tau / 0.4; a = (1 - v);
+      thinPool.addYaw(H[i].x, 0.09, H[i].y, 0, HEAL_R * (0.25 + 0.75 * easeOut(v)), 1, HEAL_R * (0.25 + 0.75 * easeOut(v)), 0.25 * a, 1.7 * a, 0.6 * a);
+      glowPool.addBill(H[i].x, 0.4, H[i].y, 1.6, 1.6, 0.04 * a, 0.5 * a, 0.16 * a);
+    }
+    // kills: pop + seeded ballistic debris
+    var K = REP.kills;
+    for (i = lowerBound(K, k - 16), n = K.length; i < n; i++) {
+      var kl = K[i]; tau = animT - kl.tick * TICK; if (tau < 0) break; if (tau >= 0.75) continue;
+      var ty = kl.type, col = ENEMY_RGB[ty], y0 = kl.air ? 0.8 : 0.3, ds = DEBRIS_S[ty];
+      if (tau < 0.16) { a = 1 - tau / 0.16; glowPool.addBill(kl.x, y0, kl.y, (0.5 + 0.7 * ds) * (1.2 - a * 0.4), (0.5 + 0.7 * ds) * (1.2 - a * 0.4), col.r * a * 1.5 + 0.3 * a, col.g * a * 1.5 + 0.3 * a, col.b * a * 1.5 + 0.3 * a); }
+      if (ty === 4 && tau < 0.3) { v = tau / 0.3; a = (1 - v) * (1 - v); ringPool.addYaw(kl.x, 0.1, kl.y, 0, 0.2 + 0.6 * easeOut(v), 1, 0.2 + 0.6 * easeOut(v), 1.3 * a, 0.5 * a, 2.0 * a); }
+      var fade = 1 - smooth((tau - 0.45) / 0.3);
+      for (j = 0; j < DEBRIS_N[ty]; j++) {
+        var sd = kl.id * 13 + j * 7, ang = rt(sd) * 6.2832, hs = (0.7 + rt(sd + 1) * 1.7) * (0.8 + 0.3 * ds), vy = 1.8 + rt(sd + 2) * 2.6;
+        var tl = (vy + Math.sqrt(vy * vy + 2 * GRAV * y0)) / GRAV, tt = tau < tl ? tau : tl;
+        var py = y0 + vy * tt - 0.5 * GRAV * tt * tt; if (py < 0.04) py = 0.04;
+        var sz = (0.055 + rt(sd + 3) * 0.07) * ds * fade, shade = 0.55 + rt(sd + 4) * 0.6;
+        debrisPool.addEuler(kl.x + Math.cos(ang) * hs * tt, py, kl.y + Math.sin(ang) * hs * tt, tt * (4 + rt(sd + 5) * 8), tt * (3 + rt(sd + 6) * 7), rt(sd + 4) * 3, sz, sz, sz, col.r * shade, col.g * shade, col.b * shade);
+      }
+    }
+    // build sparkles, upgrade ring pulses, sell rubble
+    var A = REP.actions;
+    for (i = 0, n = A.length; i < n; i++) {
+      var ac = A[i]; tau = animT - ac.t; if (tau < 0) break; if (tau >= 0.9) continue;
+      var sx = SLOT_TILES[ac.slot][0] + 0.5, sz2 = SLOT_TILES[ac.slot][1] + 0.5, c = TUR_RGB[ac.type < 0 ? 0 : ac.type];
+      if (ac.kind === "B") {
+        if (tau < 0.4) { v = tau / 0.4; a = (1 - v); ringPool.addYaw(sx, 0.2, sz2, 0, 0.3 + 0.55 * easeOut(v), 1, 0.3 + 0.55 * easeOut(v), c.r * 2 * a + 0.2 * a, c.g * 2 * a + 0.2 * a, c.b * 2 * a + 0.2 * a); }
+        for (j = 0; j < 9; j++) {
+          v = tau / 0.8; if (v >= 1) break;
+          var an = j * 0.698 + tau * 3.2 + ac.slot, rr = 0.5 * (1 - 0.55 * v), yy = 0.2 + tau * (1.5 + rt(ac.slot * 31 + j) * 1.1), s9 = 0.26 * (1 - v);
+          glowPool.addBill(sx + Math.cos(an) * rr, yy, sz2 + Math.sin(an) * rr, s9, s9, c.r * 1.3 + 0.25, c.g * 1.3 + 0.25, c.b * 1.3 + 0.25);
+        }
+      } else if (ac.kind === "U") {
+        for (j = 0; j < 2; j++) {
+          v = (tau - j * 0.14) / 0.55; if (v < 0 || v >= 1) continue; a = (1 - v) * (1 - v);
+          thinPool.addYaw(sx, 0.2 + j * 0.25, sz2, 0, 0.35 + 0.8 * easeOut(v), 1, 0.35 + 0.8 * easeOut(v), 2.2 * a, 1.6 * a, 0.4 * a);
+        }
+        for (j = 0; j < 5; j++) {
+          v = tau / 0.7; if (v >= 1) break;
+          glowPool.addBill(sx + Math.cos(j * 1.257 + ac.slot) * 0.4, 0.3 + tau * (1.2 + j * 0.25), sz2 + Math.sin(j * 1.257 + ac.slot) * 0.4, 0.22 * (1 - v), 0.22 * (1 - v), 1.2, 0.95, 0.3);
+        }
+      } else {
+        var fd = 1 - smooth((tau - 0.55) / 0.35);
+        for (j = 0; j < 8; j++) {
+          var sd2 = ac.slot * 97 + j * 11 + Math.round(ac.t * 20), an2 = rt(sd2) * 6.2832, hs2 = 0.5 + rt(sd2 + 1) * 1.1, vy2 = 1.4 + rt(sd2 + 2) * 1.8;
+          var tl2 = (vy2 + Math.sqrt(vy2 * vy2 + 2 * GRAV * 0.4)) / GRAV, tt2 = tau < tl2 ? tau : tl2, py2 = 0.45 + vy2 * tt2 - 0.5 * GRAV * tt2 * tt2;
+          if (py2 < 0.05) py2 = 0.05;
+          var s8 = (0.09 + rt(sd2 + 3) * 0.09) * fd, g8 = 0.3 + rt(sd2 + 4) * 0.2;
+          debrisPool.addEuler(sx + Math.cos(an2) * hs2 * tt2, py2, sz2 + Math.sin(an2) * hs2 * tt2, tt2 * 6, tt2 * 4, rt(sd2 + 5) * 3, s8, s8 * 0.7, s8, g8, g8 * 0.97, g8 * 0.9);
+        }
+        if (tau < 0.5) { a = 1 - tau / 0.5; glowPool.addBill(sx, 0.4, sz2, 1.0 + tau * 1.6, 1.0 + tau * 1.6, 0.16 * a, 0.15 * a, 0.13 * a); }
+      }
+    }
+  }
+
+  function drawKeep(simTime) {
+    var fallT = REP.fallTime, i, n, tau, a, v;
+    // red flash for each leak
+    var flash = 0, L = REP.leaks;
+    for (i = L.length - 1; i >= 0; i--) {
+      tau = simTime - L[i].tick * TICK;
+      if (tau < 0) continue; if (tau >= 0.45) break;
+      a = 1 - tau / 0.45; a *= a; if (a > flash) flash = a;
+    }
+    keepStone.emissive.setRGB(1.6 * flash, 0.06 * flash, 0.04 * flash);
+    keepDark.emissive.setRGB(1.4 * flash, 0.05 * flash, 0.03 * flash);
+    keepRoof.emissive.setRGB(1.2 * flash, 0.04 * flash, 0.03 * flash);
+    if (flash > 0.01) {
+      glowPool.addBill(BASE_X, 0.9, BASE_Z, 4.2, 4.2, 1.3 * flash, 0.12 * flash, 0.08 * flash);
+      ringPool.addYaw(BASE_X, 0.08, BASE_Z, 0, 0.9 + (1 - flash) * 1.1, 1, 0.9 + (1 - flash) * 1.1, 2.2 * flash, 0.2 * flash, 0.12 * flash);
+    }
+    for (i = 0, n = keepParts.length; i < n; i++) {
+      var p = keepParts[i], m = p.mesh, tk = p.chunk >= 0 ? Math.min(REP.knock[p.chunk], fallT) : fallT;
+      if (simTime < tk) { m.position.set(p.x, p.y, p.z); m.rotation.set(0, 0, 0); m.scale.set(1, 1, 1); continue; }
+      tau = simTime - tk;
+      var burst = tk >= fallT, sd = p.k * 17 + 5, ox = p.ox, oz = p.oz, ol = Math.sqrt(ox * ox + oz * oz);
+      if (ol < 0.05) { ox = Math.cos(rt(sd) * 6.2832); oz = Math.sin(rt(sd) * 6.2832); ol = 1; }
+      var ja = (rt(sd + 1) - 0.5) * 1.2, cs = Math.cos(ja), sn = Math.sin(ja), dxn = (ox * cs - oz * sn) / ol, dzn = (ox * sn + oz * cs) / ol;
+      var hs = burst ? 1.3 + rt(sd + 2) * 2.4 : 0.9 + rt(sd + 2) * 1.1, vy = burst ? 2.6 + rt(sd + 3) * 3.4 : 2.2 + rt(sd + 3) * 1.4;
+      var tl = (vy + Math.sqrt(vy * vy + 2 * GRAV * Math.max(0, p.y - p.hh))) / GRAV, tt = tau < tl ? tau : tl;
+      var py = p.y + vy * tt - 0.5 * GRAV * tt * tt; if (py < p.hh) py = p.hh;
+      m.position.set(p.x + dxn * hs * tt, py, p.z + dzn * hs * tt);
+      m.rotation.set(tt * (2 + rt(sd + 4) * 4), tt * (1 + rt(sd + 5) * 3), tt * (2 + rt(sd + 6) * 4));
+      var shrink = tau >= tl ? 0.88 : 1; m.scale.set(shrink, shrink, shrink);
+      if (!burst && tau < 0.5) {             // dust puff where the chunk broke off
+        a = 1 - tau / 0.5; glowPool.addBill(p.x, p.y, p.z, 0.7 + tau * 1.6, 0.7 + tau * 1.6, 0.22 * a, 0.2 * a, 0.17 * a);
+      }
+    }
+    // the fall: burst of debris, flash, shockwave ring
+    if (simTime >= fallT) {
+      tau = simTime - fallT;
+      for (i = 0; i < 2; i++) {
+        v = (tau - i * 0.13) / 0.95; if (v < 0 || v >= 1) continue; a = (1 - v) * (1 - v);
+        thinPool.addYaw(BASE_X, 0.1 + i * 0.05, BASE_Z, 0, 0.4 + 9.5 * easeOut(v), 1, 0.4 + 9.5 * easeOut(v), 2.4 * a, 1.5 * a, 0.7 * a);
+      }
+      if (tau < 0.35) { a = 1 - tau / 0.35; glowPool.addBill(BASE_X, 1.0, BASE_Z, 9 * (0.5 + a * 0.5), 9 * (0.5 + a * 0.5), 2.2 * a, 1.6 * a, 1.0 * a); }
+      for (i = 0; i < 12; i++) {
+        v = tau / (1.4 + rt(i * 5 + 900) * 0.8); if (v >= 1) continue; a = (1 - v) * 0.2;
+        var da = rt(i * 5 + 901) * 6.2832, dr = (0.3 + rt(i * 5 + 902) * 1.6) * easeOut(v);
+        glowPool.addBill(BASE_X + Math.cos(da) * dr, 0.4 + v * (0.6 + rt(i * 5 + 903) * 1.4), BASE_Z + Math.sin(da) * dr, 1.4 + v * 2.2, 1.4 + v * 2.2, a, a * 0.92, a * 0.8);
+      }
+      for (i = 0; i < 70; i++) {
+        var s2 = i * 9 + 3000, an = rt(s2) * 6.2832, hs3 = 0.6 + rt(s2 + 1) * 4.2, vy3 = 2.5 + rt(s2 + 2) * 5.5, y0 = 0.3 + rt(s2 + 3) * 1.3;
+        var tl3 = (vy3 + Math.sqrt(vy3 * vy3 + 2 * GRAV * y0)) / GRAV, tt3 = tau < tl3 ? tau : tl3, py3 = y0 + vy3 * tt3 - 0.5 * GRAV * tt3 * tt3;
+        if (py3 < 0.05) py3 = 0.05;
+        var s7 = 0.07 + rt(s2 + 4) * 0.13, g7 = 0.28 + rt(s2 + 5) * 0.25;
+        debrisPool.addEuler(BASE_X + Math.cos(an) * hs3 * tt3, py3, BASE_Z + Math.sin(an) * hs3 * tt3, tt3 * (3 + rt(s2 + 6) * 6), tt3 * 4, rt(s2 + 7) * 3, s7, s7 * 0.75, s7, g7, g7 * 0.96, g7 * 0.88);
+      }
+    }
+  }
+
+  function renderWorld(simTime) {
+    var fallT = REP.fallTime, animT = simTime < fallT ? simTime : fallT;     // everything freezes at the fall
+    var kf = animT * TPS, k = Math.floor(kf), f = kf - k;
+    if (k < 0) { k = 0; f = 0; }
+    if (k >= REP.lastTick) { k = REP.lastTick; f = 0; }
+    uDesat.value = simTime > fallT ? clamp01((simTime - fallT) / 1.0) * 0.93 : 0;
+    laneUniforms.uTime.value = animT;
+    // trauma shake: closed-form in simTime
+    var tr = traumaAt(simTime), amp = tr * tr * 0.25;
+    camera.position.copy(camBase);
+    if (amp > 0) camera.position.addScaledVector(camRight, noise1(simTime * 23, 1) * amp).addScaledVector(camUp, noise1(simTime * 23, 2) * amp);
+    beamPool.begin(); ringPool.begin(); thinPool.begin(); glowPool.begin(); debrisPool.begin(); shellPool.begin();
+    drawEnemies(k, f, animT);
+    drawTurrets(animT);
+    drawShots(k, animT);
+    drawEvents(k, animT);
+    drawKeep(simTime);
+    beamPool.end(); ringPool.end(); thinPool.end(); glowPool.end(); debrisPool.end(); shellPool.end();
+  }
+
+  // =====================================================================
+  //  HUD: wordless, drawn inside #stage as a final orthographic pass
+  // =====================================================================
+  var HUD = (function () {
+    var AW = 2048, AH = 256, c = document.createElement("canvas"); c.width = AW; c.height = AH;
+    var g = c.getContext("2d"), i;
+    // row 0: digits
+    g.textAlign = "center"; g.textBaseline = "alphabetic"; g.lineJoin = "round";
+    g.font = "800 124px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+    for (i = 0; i < 10; i++) {
+      g.strokeStyle = "rgba(6,8,12,0.85)"; g.lineWidth = 14; g.strokeText(String(i), i * 96 + 48, 112);
+      g.fillStyle = "#ffffff"; g.fillText(String(i), i * 96 + 48, 112);
+    }
+    // row 1: icons in 128-px cells
+    function cell(n, fn) { g.save(); g.translate(n * 128 + 64, 128 + 64); fn(); g.restore(); }
+    function outline(w) { g.lineWidth = w || 9; g.strokeStyle = "rgba(6,8,12,0.9)"; g.stroke(); }
+    cell(0, function () { g.fillStyle = "#fff"; g.fillRect(-64, -64, 128, 128); });
+    cell(1, function () { g.beginPath(); g.arc(0, 0, 46, 0, 6.2832); outline(10); g.fillStyle = "#fff"; g.fill(); });
+    cell(2, function () { g.beginPath(); g.arc(0, 0, 42, 0, 6.2832); g.lineWidth = 16; g.strokeStyle = "rgba(6,8,12,0.75)"; g.stroke(); g.lineWidth = 7; g.strokeStyle = "#fff"; g.stroke(); });
+    cell(3, function () {                 // coin
+      g.beginPath(); g.arc(0, 0, 48, 0, 6.2832); outline(10); g.fillStyle = "#f5b921"; g.fill();
+      g.beginPath(); g.arc(0, 0, 34, 0, 6.2832); g.fillStyle = "#ffd95a"; g.fill();
+      g.beginPath(); g.arc(0, 0, 34, 0, 6.2832); g.lineWidth = 5; g.strokeStyle = "#b47a08"; g.stroke();
+      g.beginPath(); g.moveTo(0, -17); g.lineTo(14, 0); g.lineTo(0, 17); g.lineTo(-14, 0); g.closePath(); g.fillStyle = "#c98d0c"; g.fill();
+    });
+    cell(4, function () {                 // crossed blades
+      for (var s = -1; s <= 1; s += 2) {
+        g.save(); g.rotate(s * 0.72);
+        g.beginPath(); g.moveTo(-7, 30); g.lineTo(-7, -42); g.lineTo(0, -56); g.lineTo(7, -42); g.lineTo(7, 30); g.closePath(); outline(9); g.fillStyle = "#e9eef5"; g.fill();
+        g.beginPath(); g.rect(-20, 28, 40, 9); outline(8); g.fillStyle = "#d9a441"; g.fill();
+        g.beginPath(); g.rect(-5, 37, 10, 18); outline(8); g.fillStyle = "#8a5a2b"; g.fill();
+        g.restore();
+      }
+    });
+    cell(5, function () {                 // grunt: grey-green pawn
+      g.beginPath(); g.moveTo(-34, 50); g.lineTo(-20, -6); g.lineTo(20, -6); g.lineTo(34, 50); g.closePath(); outline(); g.fillStyle = "#8fa672"; g.fill();
+      g.beginPath(); g.arc(0, -26, 23, 0, 6.2832); outline(); g.fillStyle = "#a9bd8a"; g.fill();
+    });
+    cell(6, function () {                 // runner: yellow dart
+      g.beginPath(); g.moveTo(54, 0); g.lineTo(-40, -40); g.lineTo(-18, 0); g.lineTo(-40, 40); g.closePath(); outline(); g.fillStyle = "#ffd42a"; g.fill();
+    });
+    cell(7, function () {                 // wisp: glowing cyan diamond
+      var gr = g.createRadialGradient(0, 0, 6, 0, 0, 62); gr.addColorStop(0, "rgba(85,234,255,0.75)"); gr.addColorStop(1, "rgba(85,234,255,0)");
+      g.fillStyle = gr; g.fillRect(-64, -64, 128, 128);
+      g.beginPath(); g.moveTo(0, -50); g.lineTo(34, 0); g.lineTo(0, 50); g.lineTo(-34, 0); g.closePath(); outline(7); g.fillStyle = "#7ff2ff"; g.fill();
+    });
+    cell(8, function () {                 // brute: dark iron block, orange plates
+      g.beginPath(); g.rect(-44, -34, 88, 82); outline(); g.fillStyle = "#3d4148"; g.fill();
+      g.beginPath(); g.rect(-54, -50, 40, 26); outline(8); g.fillStyle = "#ff8c1a"; g.fill();
+      g.beginPath(); g.rect(14, -50, 40, 26); outline(8); g.fillStyle = "#ff8c1a"; g.fill();
+      g.fillStyle = "#ff8c1a"; g.fillRect(-26, 4, 52, 20);
+    });
+    cell(9, function () {                 // splitter: purple trefoil
+      var pts = [[0, -24], [-25, 20], [25, 20]], q;
+      for (q = 0; q < 3; q++) { g.beginPath(); g.arc(pts[q][0], pts[q][1], 27, 0, 6.2832); outline(); }
+      for (q = 0; q < 3; q++) { g.beginPath(); g.arc(pts[q][0], pts[q][1], 27, 0, 6.2832); g.fillStyle = q === 0 ? "#c98bff" : "#a04be0"; g.fill(); }
+    });
+    cell(10, function () {                // mender: white with a green halo and cross
+      var gr = g.createRadialGradient(0, 0, 30, 0, 0, 63); gr.addColorStop(0, "rgba(88,240,138,0.85)"); gr.addColorStop(1, "rgba(88,240,138,0)");
+      g.fillStyle = gr; g.fillRect(-64, -64, 128, 128);
+      g.beginPath(); g.arc(0, 0, 40, 0, 6.2832); outline(7); g.fillStyle = "#f4f4ee"; g.fill();
+      g.fillStyle = "#2fc468"; g.fillRect(-9, -27, 18, 54); g.fillRect(-27, -9, 54, 18);
+    });
+    cell(11, function () {                // soft glow
+      var gr = g.createRadialGradient(0, 0, 0, 0, 0, 62); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.4, "rgba(255,255,255,0.35)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = gr; g.fillRect(-64, -64, 128, 128);
+    });
+    var tex = new THREE.CanvasTexture(c);
+    tex.generateMipmaps = false; tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+
+    var MAXQ = 160, pos = new Float32Array(MAXQ * 12), uv = new Float32Array(MAXQ * 8), col = new Float32Array(MAXQ * 16), idx = new Uint16Array(MAXQ * 6);
+    for (i = 0; i < MAXQ; i++) { idx[i * 6] = i * 4; idx[i * 6 + 1] = i * 4 + 1; idx[i * 6 + 2] = i * 4 + 2; idx[i * 6 + 3] = i * 4; idx[i * 6 + 4] = i * 4 + 2; idx[i * 6 + 5] = i * 4 + 3; }
+    var geo = new THREE.BufferGeometry();
+    var aPos = new THREE.BufferAttribute(pos, 3), aUv = new THREE.BufferAttribute(uv, 2), aCol = new THREE.BufferAttribute(col, 4);
+    aPos.setUsage(THREE.DynamicDrawUsage); aUv.setUsage(THREE.DynamicDrawUsage); aCol.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute("position", aPos); geo.setAttribute("uv", aUv); geo.setAttribute("tint", aCol); geo.setIndex(new THREE.BufferAttribute(idx, 1));
+    var mat = new THREE.ShaderMaterial({
+      uniforms: { uAtlas: { value: tex } }, transparent: true, depthTest: false, depthWrite: false,
+      vertexShader: "attribute vec4 tint; varying vec2 vUv; varying vec4 vTint; void main(){ vUv = uv; vTint = tint; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+      fragmentShader: "uniform sampler2D uAtlas; varying vec2 vUv; varying vec4 vTint; void main(){ vec4 t = texture2D(uAtlas, vUv); gl_FragColor = vec4(t.rgb * vTint.rgb, t.a * vTint.a); }"
+    });
+    var mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false;
+    var hudScene = new THREE.Scene(); hudScene.add(mesh);
+    var hudCam = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1);
+    var nq = 0, W = 1, Hh = 1;
+    // cell rect in atlas pixels: digits [d*96, 0, 96, 128]; icons [n*128, 128, 128, 128]
+    function quad(x, y, w, h, ax, ay, aw, ah, r, gg, b, a) {
+      if (nq >= MAXQ) return;
+      var o = nq * 12, y0 = Hh - y, y1 = Hh - (y + h);
+      pos[o] = x; pos[o + 1] = y0; pos[o + 2] = 0; pos[o + 3] = x; pos[o + 4] = y1; pos[o + 5] = 0;
+      pos[o + 6] = x + w; pos[o + 7] = y1; pos[o + 8] = 0; pos[o + 9] = x + w; pos[o + 10] = y0; pos[o + 11] = 0;
+      var u0 = (ax + 0.5) / AW, u1 = (ax + aw - 0.5) / AW, v0 = 1 - (ay + 0.5) / AH, v1 = 1 - (ay + ah - 0.5) / AH;
+      o = nq * 8; uv[o] = u0; uv[o + 1] = v0; uv[o + 2] = u0; uv[o + 3] = v1; uv[o + 4] = u1; uv[o + 5] = v1; uv[o + 6] = u1; uv[o + 7] = v0;
+      o = nq * 16;
+      for (var q = 0; q < 4; q++) { col[o + q * 4] = r; col[o + q * 4 + 1] = gg; col[o + q * 4 + 2] = b; col[o + q * 4 + 3] = a; }
+      nq++;
+    }
+    function icon(n, x, y, s, r, gg, b, a) { quad(x, y, s, s, n * 128, 128, 128, 128, r, gg, b, a); }
+    function number(val, x, y, h, r, gg, b, a) {        // returns the x after the last digit
+      var str = String(Math.max(0, Math.floor(val))), adv = h * 0.6, cw = h * 0.75;
+      for (var q = 0; q < str.length; q++) { quad(x + q * adv - (cw - adv) / 2, y, cw, h, (str.charCodeAt(q) - 48) * 96, 0, 96, 128, r, gg, b, a); }
+      return x + str.length * adv;
+    }
+    function resize(w, h) { W = w; Hh = h; hudCam.right = w; hudCam.top = h; hudCam.updateProjectionMatrix(); }
+    var PREVIEW_ICON = [5, 6, 7, 8, 9, 10];
+    function draw(simTime) {
+      nq = 0;
+      var fallT = REP.fallTime, t = simTime < fallT ? simTime : fallT, k = Math.floor(t * TPS);
+      if (k < 0) k = 0; if (k > REP.lastTick) k = REP.lastTick;
+      var H = Hh, m = 0.02 * H, wave = REP.waveAt[k], gold = REP.goldAt[k], hp = REP.hpAt[k], i, x;
+      // wave number (top-left) with crossed-blades glyph; pops at each wave start
+      var wt = wave > 0 ? t - (20 + 40 * (wave - 1)) * TICK : 10, pop = 1 + 0.2 * Math.exp(-Math.max(0, wt) * 7);
+      var hW = 0.112 * H * pop, wy = 0.01 * H + (0.112 * H - hW) / 2;
+      icon(4, m, m + 0.012 * H, 0.084 * H, 1, 1, 1, 1);
+      number(wave, m + 0.094 * H - (hW - 0.112 * H) * 0.3, wy, hW, 1, 0.97, 0.9, 1);
+      // gold under the wave number
+      var gy = 0.129 * H, gh = 0.045 * H;
+      icon(3, m + 0.004 * H, gy + 0.003 * H, 0.039 * H, 1, 1, 1, 1);
+      number(gold, m + 0.052 * H, gy, gh, 1, 0.86, 0.36, 1);
+      // next-wave preview under the gold: coloured type icons with counts
+      var pv = REP.previews[wave] || REP.previews[REP.previews.length - 1] || [0, 0, 0, 0, 0, 0], py = 0.176 * H, ps = 0.035 * H, ph = 0.036 * H;
+      x = m + 0.002 * H;
+      for (i = 0; i < 6; i++) {
+        if (!pv[i]) continue;
+        icon(PREVIEW_ICON[i], x, py, ps, 1, 1, 1, 1);
+        x = number(pv[i], x + ps + 0.002 * H, py, ph, 0.93, 0.95, 1, 1) + 0.011 * H;
+      }
+      // base HP: ten pips, top-right; a leak extinguishes pips with a short flash
+      var pd = 0.036 * H, gap = 0.009 * H, total = 10 * pd + 9 * gap, px0 = W - m - total, py0 = m + 0.012 * H;
+      for (i = 0; i < 10; i++) {
+        var pxx = px0 + i * (pd + gap), lit = hp > i;
+        if (lit) { icon(11, pxx - pd * 0.45, py0 - pd * 0.45, pd * 1.9, 1, 0.55, 0.2, 0.45); icon(1, pxx, py0, pd, 1, 0.8, 0.3, 1); }
+        else {
+          icon(1, pxx + pd * 0.12, py0 + pd * 0.12, pd * 0.76, 0.16, 0.17, 0.2, 0.75); icon(2, pxx, py0, pd, 0.55, 0.57, 0.62, 0.55);
+          var kt = REP.knock[9 - i], tau = simTime - kt;
+          if (tau >= 0 && tau < 0.4) { var a = 1 - tau / 0.4, s = pd * (1 + 1.8 * tau / 0.4); icon(11, pxx + pd / 2 - s, py0 + pd / 2 - s, s * 2, 1, 0.25 + 0.75 * a, 0.2 + 0.6 * a, a); icon(1, pxx + pd / 2 - s / 2, py0 + pd / 2 - s / 2, s, 1, 0.3 + 0.7 * a, 0.25 + 0.6 * a, a * 0.9); }
+        }
+      }
+      aPos.needsUpdate = true; aUv.needsUpdate = true; aCol.needsUpdate = true;
+      geo.setDrawRange(0, nq * 6);
+    }
+    return { scene: hudScene, camera: hudCam, draw: draw, resize: resize };
+  })();
+
+  function renderAt(simTime) {
+    renderWorld(simTime);
+    HUD.draw(simTime);
+    renderer.clear();
+    renderer.render(scene, camera);
+    renderer.clearDepth();
+    renderer.render(HUD.scene, HUD.camera);
+  }
+  // one hidden frame with every instance pool populated, so no shader compiles mid-replay
+  function warmUp() {
+    for (var i = 0; i < ALL_POOLS.length; i++) { var p = ALL_POOLS[i]; p.begin(); p.addYaw(12, -400, 7, 0, 0.001, 0.001, 0.001, 1, 1, 1); p.end(); }
+    uDesat.value = 0;
+    renderer.clear();
+    renderer.render(scene, camera);
+    renderer.clearDepth();
+    renderer.render(HUD.scene, HUD.camera);
+  }
+  function onResize() {
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    fitCamera();
+    HUD.resize(Math.max(1, window.innerWidth), Math.max(1, window.innerHeight));
+  }
+
+  // =====================================================================
+  //  Audio: synthesized one-shots, driven by simTime crossings while PLAYING
+  // =====================================================================
+  var AUDIO = (function () {
+    var AC = window.AudioContext || window.webkitAudioContext, ctx = null, master = null, noiseBuf = null;
+    var arand = mulberry(4242), live = [], shotTimes = [], popTimes = [], windOn = false, audible = false;
+    var SHOT_PRIO = [3, 1, 4, 0, 2];       // loudest first: lance, cannon, flak, bolt, frost
+    try {
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 0;
+      var comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -18; comp.knee.value = 14; comp.ratio.value = 10; comp.attack.value = 0.003; comp.release.value = 0.22;
+      master.connect(comp); comp.connect(ctx.destination);
+      var len = Math.floor(ctx.sampleRate * 2), d;
+      noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate); d = noiseBuf.getChannelData(0);
+      for (var q = 0; q < len; q++) d[q] = arand() * 2 - 1;
+    } catch (err) { ctx = null; }
+    function resume() {
+      if (!ctx) return;
+      try { var p = ctx.resume(); if (p && p.catch) p.catch(function () {}); } catch (err) {}
+    }
+    resume();
+    function firstGesture() {
+      resume();
+      window.removeEventListener("pointerdown", firstGesture, true);
+      window.removeEventListener("keydown", firstGesture, true);
+    }
+    window.addEventListener("pointerdown", firstGesture, true);
+    window.addEventListener("keydown", firstGesture, true);
+
+    function track(src) {
+      live.push(src);
+      src.onended = function () { var i = live.indexOf(src); if (i >= 0) live.splice(i, 1); };
+    }
+    function bus(pan) {                    // per-sound gain -> pan by board position -> master
+      var g = ctx.createGain(); g.gain.value = 0.0001;
+      if (ctx.createStereoPanner) { var p = ctx.createStereoPanner(); p.pan.value = pan; g.connect(p); p.connect(master); }
+      else g.connect(master);
+      return g;
+    }
+    function env(g, t, peak, attack, dur) {
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(peak, t + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    }
+    function osc(type, f0, f1, t, dur, dest) {
+      var o = ctx.createOscillator(); o.type = type;
+      o.frequency.setValueAtTime(f0, t);
+      if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
+      o.connect(dest); o.start(t); o.stop(t + dur + 0.03); track(o);
+      return o;
+    }
+    function noise(t, dur, dest, rate, loop) {
+      var s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true; s.playbackRate.value = rate || 1;
+      s.connect(dest); s.start(t, arand() * 1.6);
+      if (!loop) s.stop(t + dur + 0.03);
+      track(s);
+      return s;
+    }
+    function filt(type, f, qv, dest) { var b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = qv; b.connect(dest); return b; }
+    function panOf(x) { var p = (x / 24) * 2 - 1; return (p < -1 ? -1 : p > 1 ? 1 : p) * 0.85; }
+
+    function shot(type, x) {
+      var t = ctx.currentTime, v = 0.94 + arand() * 0.12, g = bus(panOf(x)), g2;
+      if (type === 0) {                    // bolt: short bright blip
+        env(g, t, 0.07, 0.002, 0.07); osc("square", 1500 * v, 620 * v, t, 0.06, filt("lowpass", 5000, 0.5, g));
+      } else if (type === 1) {             // cannon: thump + grit
+        env(g, t, 0.42, 0.004, 0.26); osc("sine", 150 * v, 42, t, 0.22, g);
+        g2 = bus(panOf(x)); env(g2, t, 0.2, 0.002, 0.11); noise(t, 0.11, filt("lowpass", 950, 0.7, g2), 0.8);
+      } else if (type === 2) {             // frost: airy shimmer
+        env(g, t, 0.06, 0.01, 0.14); noise(t, 0.14, filt("highpass", 3600, 0.7, g), 1.4);
+        g2 = bus(panOf(x)); env(g2, t, 0.03, 0.005, 0.13); osc("sine", 2300 * v, 1500 * v, t, 0.12, g2);
+      } else if (type === 3) {             // lance: hard zap
+        env(g, t, 0.2, 0.002, 0.2); osc("sawtooth", 1150 * v, 170, t, 0.17, filt("lowpass", 3600, 2, g));
+        g2 = bus(panOf(x)); env(g2, t, 0.1, 0.002, 0.07); noise(t, 0.07, filt("bandpass", 2400, 1.2, g2), 1.2);
+      } else {                             // flak: double pop
+        env(g, t, 0.19, 0.002, 0.07); noise(t, 0.07, filt("bandpass", 1250 * v, 1.1, g), 1);
+        g2 = bus(panOf(x)); env(g2, t + 0.05, 0.13, 0.002, 0.08); noise(t + 0.05, 0.08, filt("bandpass", 850 * v, 1.1, g2), 0.9);
+      }
+    }
+    function pop(x) {
+      var t = ctx.currentTime, g = bus(panOf(x)), v = 0.85 + arand() * 0.4;
+      env(g, t, 0.075, 0.003, 0.08); osc("sine", 540 * v, 240 * v, t, 0.07, g);
+    }
+    function horn() {
+      var t = ctx.currentTime, g = bus(-0.45), lp = filt("lowpass", 760, 0.8, g);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.17, t + 0.09); g.gain.setValueAtTime(0.17, t + 0.42); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
+      var freqs = [110, 165, 220.6];
+      for (var i = 0; i < freqs.length; i++) {
+        var o = ctx.createOscillator(); o.type = i === 2 ? "triangle" : "sawtooth";
+        o.frequency.setValueAtTime(freqs[i] * 0.8, t); o.frequency.exponentialRampToValueAtTime(freqs[i], t + 0.32);
+        o.connect(lp); o.start(t); o.stop(t + 0.8); track(o);
+      }
+    }
+    function leak() {
+      var t = ctx.currentTime, g = bus(0.78), g2 = bus(0.78), i;
+      env(g, t, 0.4, 0.002, 0.16); noise(t, 0.16, filt("lowpass", 1900, 0.8, g), 0.7);
+      g2.gain.setValueAtTime(0.0001, t);
+      for (i = 0; i < 2; i++) {
+        g2.gain.setValueAtTime(0.0001, t + 0.05 + i * 0.16); g2.gain.linearRampToValueAtTime(0.1, t + 0.06 + i * 0.16);
+        g2.gain.setValueAtTime(0.1, t + 0.15 + i * 0.16); g2.gain.linearRampToValueAtTime(0.0001, t + 0.19 + i * 0.16);
+      }
+      var o = ctx.createOscillator(); o.type = "square";
+      o.frequency.setValueAtTime(880, t); o.frequency.setValueAtTime(660, t + 0.21);
+      o.connect(filt("lowpass", 2600, 0.5, g2)); o.start(t); o.stop(t + 0.42); track(o);
+    }
+    function collapse() {
+      var t = ctx.currentTime, g = bus(0.6), lp = filt("lowpass", 240, 0.7, g);
+      env(g, t, 0.9, 0.01, 2.8);
+      lp.frequency.setValueAtTime(420, t); lp.frequency.exponentialRampToValueAtTime(45, t + 2.4);
+      noise(t, 2.8, lp, 0.5);
+      var g2 = bus(0.6); env(g2, t, 0.6, 0.01, 1.9); osc("sine", 64, 24, t, 1.8, g2);
+      var g3 = bus(0.6); env(g3, t, 0.45, 0.002, 0.3); noise(t, 0.3, filt("lowpass", 2600, 0.6, g3), 0.9);
+    }
+    function startWind() {
+      if (windOn) return;
+      windOn = true;
+      var t = ctx.currentTime, g = bus(0), bp = filt("bandpass", 330, 0.55, g);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.085, t + 1.6);
+      noise(t, 0, bp, 0.55, true);
+      var lfo = ctx.createOscillator(), lg = ctx.createGain();
+      lfo.frequency.value = 0.17; lg.gain.value = 110; lfo.connect(lg); lg.connect(bp.frequency); lfo.start(t); track(lfo);
+    }
+    function silence() {                   // fade to silence within 50 ms and stop everything still ringing
+      if (!ctx) return;
+      var t = ctx.currentTime, i;
+      master.gain.cancelScheduledValues(t);
+      master.gain.setValueAtTime(master.gain.value, t);
+      master.gain.linearRampToValueAtTime(0, t + 0.04);
+      for (i = 0; i < live.length; i++) { try { live[i].stop(t + 0.05); } catch (err) {} }
+      windOn = false;
+    }
+    function setAudible(on) {
+      if (!ctx || on === audible) return;
+      audible = on;
+      if (!on) { silence(); return; }
+      var t = ctx.currentTime;
+      master.gain.cancelScheduledValues(t);
+      master.gain.setValueAtTime(master.gain.value, t);
+      master.gain.linearRampToValueAtTime(0.8, t + 0.03);
+    }
+    function allow(times, max) {
+      var t = ctx.currentTime;
+      while (times.length && times[0] < t - 1) times.shift();
+      if (times.length >= max) return false;
+      times.push(t);
+      return true;
+    }
+    // forward playback carried simTime from prev to cur: fire the one-shots of every tick crossed
+    function advance(prev, cur) {
+      if (!ctx || !audible || ctx.state !== "running") return;
+      var k0 = Math.floor(prev * TPS) + 1, k1 = Math.floor(cur * TPS), i, n;
+      if (k1 > REP.lastTick) k1 = REP.lastTick;
+      if (REP.fallTick >= 0 && cur >= REP.fallTime + 0.6) startWind();
+      if (k1 < k0) return;
+      if (k1 - k0 > 12) k0 = k1 - 12;
+      var S = REP.shots, batch = [];
+      for (i = lowerBound(S, k0), n = S.length; i < n && S[i].tick <= k1; i++) batch.push(S[i]);
+      batch.sort(function (a, b) { return SHOT_PRIO.indexOf(a.type) - SHOT_PRIO.indexOf(b.type); });
+      for (i = 0; i < batch.length; i++) { if (!allow(shotTimes, 12)) break; shot(batch[i].type, SLOT_TILES[batch[i].slot][0] + 0.5); }
+      var K = REP.kills;
+      for (i = lowerBound(K, k0), n = K.length; i < n && K[i].tick <= k1; i++) if (allow(popTimes, 9)) pop(K[i].x);
+      var W = REP.waves;
+      for (i = 0; i < W.length; i++) if (W[i].tick >= k0 && W[i].tick <= k1) { horn(); break; }
+      var L = REP.leaks, any = false;
+      for (i = lowerBound(L, k0), n = L.length; i < n && L[i].tick <= k1; i++) any = true;
+      if (any) leak();
+      if (REP.fallTick >= k0 && REP.fallTick <= k1) collapse();
+    }
+    return { setAudible: setAudible, advance: advance };
+  })();
+
+  // =====================================================================
+  //  Playback state machine & dock controls
+  // =====================================================================
+  var COUNTDOWN = "COUNTDOWN", PLAYING = "PLAYING", PAUSED = "PAUSED", REFIRE_HOLD = "REFIRE_HOLD", ENDED = "ENDED";
+  var state = COUNTDOWN, simTime = 0, playbackSpeed = 1.0, countdownElapsed = 0, holdElapsed = 0, lastTs = null;
+  var elCountdown = document.getElementById("countdown"), elScrub = document.getElementById("scrubber");
+  var elToggle = document.getElementById("btn-toggle"), elRefire = document.getElementById("btn-refire");
+  var elPause = document.getElementById("icon-pause"), elPlay = document.getElementById("icon-play");
+  var pills = document.querySelectorAll(".speed-pill");
+
+  function hideCountdown() { elCountdown.style.display = "none"; elCountdown.textContent = ""; }
+  function setState(s) {
+    state = s;
+    var running = s === PLAYING || s === COUNTDOWN || s === REFIRE_HOLD;
+    elPause.style.display = running ? "" : "none";
+    elPlay.style.display = running ? "none" : "";
+    elToggle.setAttribute("aria-label", running ? "Pause" : "Play");
+    AUDIO.setAudible(s === PLAYING);
+  }
+  elToggle.addEventListener("click", function () {
+    if (state === PLAYING) setState(PAUSED);
+    else if (state === COUNTDOWN || state === REFIRE_HOLD) { hideCountdown(); simTime = 0; setState(PAUSED); }
+    else if (state === PAUSED) setState(PLAYING);
+    else if (state === ENDED) { hideCountdown(); simTime = 0; elScrub.value = "0"; setState(PLAYING); }
+    renderAt(simTime);
+  });
+  elRefire.addEventListener("click", function () {
+    hideCountdown();
+    simTime = 0; elScrub.value = "0";
+    renderAt(0);
+    holdElapsed = 0;
+    setState(REFIRE_HOLD);
+  });
+  elScrub.addEventListener("input", function () {
+    hideCountdown();
+    var v = parseFloat(elScrub.value);
+    if (!(v >= 0)) v = 0;
+    if (v > DURATION) v = DURATION;
+    simTime = v;
+    setState(PAUSED);
+    renderAt(simTime);
+  });
+  function selectPill(pill) {
+    playbackSpeed = parseFloat(pill.getAttribute("data-speed"));
+    for (var i = 0; i < pills.length; i++) {
+      var on = pills[i] === pill;
+      if (on) pills[i].classList.add("is-active"); else pills[i].classList.remove("is-active");
+      pills[i].setAttribute("aria-checked", on ? "true" : "false");
+    }
+  }
+  for (ii = 0; ii < pills.length; ii++) pills[ii].addEventListener("click", function () { selectPill(this); });
+  window.addEventListener("resize", function () { onResize(); renderAt(simTime); });
+
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    var rawDt = lastTs === null ? 0 : (ts - lastTs) / 1000;
+    lastTs = ts;
+    var dt = Math.min(rawDt, 0.1);
+    if (!(dt > 0)) dt = 0;
+    if (state === COUNTDOWN) {
+      countdownElapsed += dt;
+      if (countdownElapsed >= 3) { hideCountdown(); setState(PLAYING); }
+      else { elCountdown.style.display = "block"; elCountdown.textContent = String(3 - Math.floor(countdownElapsed)); }
+    } else if (state === REFIRE_HOLD) {
+      holdElapsed += dt;
+      if (holdElapsed >= 1) setState(PLAYING);
+    } else if (state === PLAYING) {
+      var prev = simTime;
+      simTime = Math.min(DURATION, simTime + dt * playbackSpeed);
+      elScrub.value = simTime.toFixed(3);
+      AUDIO.advance(prev, simTime);
+      if (simTime >= DURATION) { simTime = DURATION; elScrub.value = DURATION.toFixed(3); setState(ENDED); }
+    }
+    renderAt(simTime);
+  }
+
+  // =====================================================================
+  //  Self-report
+  // =====================================================================
+  var selfA = false, selfB = false;
+  try {
+    var ra = rampartSimulate(function () { return { plan: function (s) { var a = [], g = s.gold; for (var i = 0; i < s.slots.length; i++) { var sl = s.slots[i]; if (!sl.turret && g >= 50) { a.push({ op: "build", slot: sl.slot, type: "bolt" }); g -= 50; } } return a; } }; }, 42, 12020);
+    selfA = ra.hash === "82a5353d" && ra.fallTick === 1035 && ra.log.length === 166 && ra.score === 25.38;
+    var rb = rampartSimulate(function () { return { plan: function (s) {
+      if (s.wave === 1) return [{ op: "build", slot: 3, type: "cannon" }, { op: "build", slot: 6, type: "frost" }];
+      if (s.wave === 3) return [{ op: "upgrade", slot: 3 }, { op: "build", slot: 12, type: "flak" }];
+      if (s.wave === 6) return [{ op: "build", slot: 8, type: "lance" }, { op: "sell", slot: 6 }];
+      return []; } }; }, 7, 12020);
+    selfB = rb.hash === "2e8858d7" && rb.fallTick === 457 && rb.log.length === 48 && rb.score === 10.93;
+  } catch (err) {}
+  window.BENCH_REPORT = {
+    selfCheck: { vectorA: selfA, vectorB: selfB },
+    strategy: {"summary": "Tuned cannon/flak/bolt build order with weighted splash and priority targeting, played on an exact in-strategy mirror of the engine: target choices are pre-simulated each wave, gold is banked for interest while a forward simulation says the board still holds, finished cannons are sold and rebuilt to skip reloads, and when a leak or the fall is predicted a rollout search tries type conversions, reset and targeting variants and emergency purchases. Falls back to stateless targeting and the plain build order if the mirror ever disagrees with the engine.", "seedsTested": 200, "meanScoreOnTestedSeeds": 47.99},
+    seed42: { score: REP.result.score, fallTick: REP.result.fallTick },
+    systems: { board: "full", enemiesAndTurrets: "full", combatVisuals: "full", fall: "full", hud: "full", audio: "full" },
+    simplifications: ["Checked in an offscreen WebKit view (real WebGL2: scrubbed frames, screenshots, no script errors), not in Chrome; requestAnimationFrame does not fire in that offscreen view, so the timed playback loop and the audio were exercised only against a mocked DOM/WebAudio harness and no sound was heard", "Slowed enemies switch to a frost-tinted material pool (on/off per tick, no gradual blend)", "Enemy facing is smoothed from recorded tick positions rather than exact path tangents", "Turret aim is yaw only; barrel pitch is fixed per type", "measuredFps is null: no real-time frame rate was measured (synchronous render cost in WebKit on a 3840x2160 canvas was about 6 ms per frame on average, 12 ms worst)"],
+    testedInBrowser: true,
+    measuredFps: null
+  };
+
+  // initial resting scene (simTime = 0), then the countdown starts on the first animation frame
+  onResize();
+  warmUp();
+  renderAt(0);
+  requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
