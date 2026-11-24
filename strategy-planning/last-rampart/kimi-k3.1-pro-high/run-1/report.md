@@ -1,0 +1,25 @@
+# Benchmark Execution Report: Kimi Code K3.1 Pro (High), run 1
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Kimi Code 2.7.3`
+- **Model ID**: `kimi-code/k3.1-pro`
+- **Reasoning Effort**: `High`
+- **Deliverable**: `index.html`
+- **Code Size**: 63,762 bytes | 1,192 LOC
+- **SHA-256**: `7b5db041dceef1d53547239185add0a3cfebe9683e90579da11e037d652f23a9`
+- **Wall-Clock Duration**: 2995.36s
+- **Agent Turns / Steps**: 3
+- **Tool Calls**: 120
+- **Input Tokens (Uncached)**: 151,916
+- **Cached Read Tokens**: 9,169,676
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 0
+- **Output Tokens**: 84,284
+- **Verification**: FAIL (90.5% — 19/21 checks)
+- **Strategy Score**: 32.8 waves held (mean of five undisclosed seeds: 31.88, 34.28, 34.35, 30.55, 32.95)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] Pause/Resume Canvas Freeze & 2.0x Playback Rate Verified`: pausedScrub=(2.216 -> 2.216), pausedCanvasFrozen=True, observedRate2x=1.96x
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=0e274674c55012c8, backward=0e274674c55012c8, freshReload=0e274674c55012c8, endClamp=100/100, endedCanvasFrozen=True
