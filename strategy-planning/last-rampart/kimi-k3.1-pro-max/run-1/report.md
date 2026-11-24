@@ -1,0 +1,22 @@
+# Benchmark Execution Report: Kimi Code K3.1 Pro (Max), run 1
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Kimi Code 2.7.3`
+- **Model ID**: `kimi-code/k3.1-pro`
+- **Reasoning Effort**: `Max`
+- **Deliverable**: `index.html`
+- **Code Size**: 55,459 bytes | 683 LOC
+- **SHA-256**: `3deb90c16e2f3196c6772bc6a35107a9e1babd987da4a211de3feb62c0ce0190`
+- **Wall-Clock Duration**: 4183.07s
+- **Agent Turns / Steps**: 5
+- **Tool Calls**: 108
+- **Input Tokens (Uncached)**: 168,486
+- **Cached Read Tokens**: 9,667,927
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 0
+- **Output Tokens**: 112,875
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 31.36 waves held (mean of five undisclosed seeds: 30.55, 31.65, 31.65, 30.48, 32.45)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 31.36 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
