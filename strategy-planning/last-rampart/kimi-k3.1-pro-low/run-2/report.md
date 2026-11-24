@@ -1,0 +1,25 @@
+# Benchmark Execution Report: Kimi Code K3.1 Pro (Low), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Kimi Code 2.7.3`
+- **Model ID**: `kimi-code/k3.1-pro`
+- **Reasoning Effort**: `Low`
+- **Deliverable**: `index.html`
+- **Code Size**: 46,424 bytes | 465 LOC
+- **SHA-256**: `f2239bad8ef52c9663a99063391c1e2d14dd9a7f62e50ea554b8211313e2c01a`
+- **Wall-Clock Duration**: 1049.40s
+- **Agent Turns / Steps**: 2
+- **Tool Calls**: 82
+- **Input Tokens (Uncached)**: 80,437
+- **Cached Read Tokens**: 4,758,784
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 0
+- **Output Tokens**: 44,716
+- **Verification**: FAIL (90.5% — 19/21 checks)
+- **Strategy Score**: 37.33 waves held (mean of five undisclosed seeds: 36.83, 39.63, 38.83, 34.92, 36.42)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `Strategy grader: Rules conformance, seed 42`: reference={'score': 37.13, 'fallTick': 1505, 'hash': 'b94913e9'} model={'score': 36.53, 'fallTick': 1481, 'hash': '594dadf8'}
+  - `Strategy grader: Rules conformance, seed undisclosed`: reference={'score': 37.92, 'fallTick': 1537, 'hash': 'd6df34d7'} model={'score': 37.92, 'fallTick': 1537, 'hash': 'a6f23523'}
