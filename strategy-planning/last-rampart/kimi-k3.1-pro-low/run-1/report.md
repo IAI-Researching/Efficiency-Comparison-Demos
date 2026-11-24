@@ -1,0 +1,26 @@
+# Benchmark Execution Report: Kimi Code K3.1 Pro (Low), run 1
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Kimi Code 2.7.3`
+- **Model ID**: `kimi-code/k3.1-pro`
+- **Reasoning Effort**: `Low`
+- **Deliverable**: `index.html`
+- **Code Size**: 44,073 bytes | 579 LOC
+- **SHA-256**: `9a6e96b1c0ef6cab34f035bb01a11987ff1bd5c0106d5c7f6767c87890425b92`
+- **Wall-Clock Duration**: 1102.96s
+- **Agent Turns / Steps**: 1
+- **Tool Calls**: 56
+- **Input Tokens (Uncached)**: 69,004
+- **Cached Read Tokens**: 2,396,499
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 0
+- **Output Tokens**: 32,380
+- **Verification**: FAIL (85.7% — 18/21 checks)
+- **Strategy Score**: 31.22 waves held (mean of five undisclosed seeds: 29.78, 32.23, 32.73, 31.43, 29.93)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=f10fcca2397a8ca7, backward=b6325435024f6231, freshReload=f10fcca2397a8ca7, endClamp=100/100, endedCanvasFrozen=True
+  - `Strategy grader: Rules conformance, seed 42`: reference={'score': 29.88, 'fallTick': 1215, 'hash': 'cc93f7c6'} model={'score': 36.42, 'fallTick': 1477, 'hash': '107263db'}
+  - `Strategy grader: Rules conformance, seed undisclosed`: reference={'score': 32.42, 'fallTick': 1317, 'hash': 'a72a9a9e'} model={'score': 34.23, 'fallTick': 1389, 'hash': '72193d2b'}
