@@ -1,0 +1,2331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Last Rampart: Wave Defense Strategist</title>
+<style>
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #161922 0%, #090a0f 100%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+}
+#stage {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+#countdown {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 50;
+  pointer-events: none;
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.35);
+  font-variant-numeric: tabular-nums;
+}
+
+#dock {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: 536px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 14px;
+  background: rgba(15, 17, 23, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+#dock button {
+  font-family: inherit;
+  line-height: 1;
+  margin: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.dock-sep {
+  width: 1px;
+  height: 18px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#btn-refire {
+  width: 78px;
+  height: 28px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+#btn-refire:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+#btn-toggle {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  color: #ffffff;
+  cursor: pointer;
+}
+#btn-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+#speed-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.speed-pill {
+  width: 42px;
+  height: 24px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.speed-pill:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+.speed-pill.is-active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+#scrubber {
+  width: 157px;
+  height: 4px;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+}
+#scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+#scrubber::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script id="rampart-strategy">
+function createStrategy() {
+  "use strict";
+  // Last Rampart strategy: plays the game in an exact private copy of the rules ("shadow") and plans by look-ahead.
+  //  * The shadow is advanced one wave at a time from plan(); it never reads ambiguous view fields, only
+  //    state.wave / gold / baseHp / enemies.length / nextWave, and it is cross-checked against them each wave.
+  //  * Purchases are just-in-time: at each wave start the known waves (this one and the previewed one) are simulated
+  //    with the current turrets; gold is spent only when that predicts leaks, on the candidate with the best
+  //    improvement per gold. Everything else stays banked for the 5% interest.
+  //  * Each slot has a target turret type (cannons upstream, flak at the end of the air lane, one frost).
+  //    Once the build is complete the same look-ahead re-shapes it (type swaps) and, with idle gold, sells and
+  //    rebuilds turrets that are mid-cooldown so they fire again at once.
+  //  * target() replays the choices the shadow made for the coming wave (cluster-seeking cannons and flak,
+  //    overkill-aware bolts and lances, frost on the least-slowed leader).
+  //  * If the shadow ever disagreed with the real game, the strategy falls back to a plain stateless build order
+  //    and the engine's default targeting.
+  var P = {"canA": 102, "canTy": [0.57, 3.7, 1, 0.82, 1.5, 7.29, 0.95], "canProg": 2.63, "flkA": 151, "boltA": 168, "boltKill": 234, "boltTyW": [220, -50, -221, 426, -533, 21, 492], "froPen": 1805, "froSl": 5, "froTy": [-31, 0, 178, -302, 173, 251, -597], "mendB": 138, "testMax": 400, "jExtra": 3, "hpMargin": 1, "hpMargin2": 1.51, "swapMinGain": 1.93, "swapRounds": 3, "rich": 591, "cost0": 70, "bankCap": 1000, "final": [1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 4, 4, 4, 1, 4, 1], "refreshMinGain": 0.05, "refreshTypes": [1, 1, 1, 1, 1], "postFall": 40, "fallLeakW": 0.21};
+  function par(k, d) { return P[k] !== undefined ? P[k] : d; }
+
+  // ------------------------------------------------------------------ rules tables
+  var GLEN = 4600, ALEN = 2800;
+  var GPTS = [[0, 2], [6, 2], [6, 10], [12, 10], [12, 3], [18, 3], [18, 11], [23, 11]];
+  var APTS = [[0, 6], [21, 6], [21, 11], [23, 11]];
+  var SLOTS = [[3, 3], [5, 5], [7, 4], [7, 8], [9, 9], [10, 5], [11, 8], [13, 8], [14, 5], [15, 2], [16, 7], [17, 4], [19, 8], [20, 10], [22, 9], [3, 7]];
+  var TNAMES = ["bolt", "cannon", "frost", "lance", "flak"];
+  var T_COST = [50, 90, 70, 120, 80];
+  var T_BASE = [26, 60, 10, 180, 40];
+  var T_PERIOD = [8, 24, 12, 36, 10];
+  var T_RANGE = [300, 260, 240, 360, 320];
+  var T_GROUND = [1, 1, 1, 1, 0];
+  var T_AIR = [1, 0, 1, 0, 1];
+  var ENAMES = ["grunt", "runner", "wisp", "brute", "splitter", "mender", "splitling"];
+  var E_HP = [60, 40, 50, 150, 90, 70, 0];
+  var E_SPEED = [10, 20, 12, 6, 8, 8, 12, 0];
+  var E_SLOW = [6, 12, 7, 3, 4, 4, 7, 0];
+  var E_BOUNTY = [4, 4, 6, 9, 6, 7, 1];
+  var E_LEAK = [1, 1, 2, 3, 2, 2, 1];
+  var E_FIRST = [1, 2, 3, 4, 6, 8];
+  var E_WEIGHT = [10, 4, 3, 3, 2, 1];
+  var DEAD = 7;
+
+  var DMG = [], R2 = [], RNG = [];
+  (function () {
+    for (var t = 0; t < 5; t++) {
+      var d = T_BASE[t];
+      for (var k = 0; k < 3; k++) {
+        DMG.push(d);
+        var r = T_RANGE[t] + 30 * k;
+        RNG.push(r);
+        R2.push(r * r);
+        d = Math.floor(d * 16 / 10);
+      }
+    }
+  })();
+
+  function buildRoute(pts, len) {
+    var X = new Int16Array(len + 1), Y = new Int16Array(len + 1), p = 0;
+    for (var i = 0; i + 1 < pts.length; i++) {
+      var ax = pts[i][0] * 100 + 50, ay = pts[i][1] * 100 + 50, bx = pts[i + 1][0] * 100 + 50, by = pts[i + 1][1] * 100 + 50;
+      var dx = bx > ax ? 1 : bx < ax ? -1 : 0, dy = by > ay ? 1 : by < ay ? -1 : 0, L = Math.abs(bx - ax) + Math.abs(by - ay);
+      for (var d = 0; d < L; d++) { X[p] = ax + dx * d; Y[p] = ay + dy * d; p++; }
+      if (i + 2 === pts.length) { X[p] = bx; Y[p] = by; }
+    }
+    return [X, Y];
+  }
+  var GR = buildRoute(GPTS, GLEN), AR = buildRoute(APTS, ALEN);
+  var GX = GR[0], GY = GR[1], AX = AR[0], AY = AR[1];
+  var D2G = [], D2A = [], ENTG = [], ENTA = [];
+  (function () {
+    for (var s = 0; s < 16; s++) {
+      var sx = SLOTS[s][0] * 100 + 50, sy = SLOTS[s][1] * 100 + 50, p, dx, dy;
+      var g = new Int32Array(GLEN + 1), a = new Int32Array(ALEN + 1);
+      for (p = 0; p <= GLEN; p++) { dx = GX[p] - sx; dy = GY[p] - sy; g[p] = dx * dx + dy * dy; }
+      for (p = 0; p <= ALEN; p++) { dx = AX[p] - sx; dy = AY[p] - sy; a[p] = dx * dx + dy * dy; }
+      D2G.push(g); D2A.push(a);
+      var eg = new Int32Array(15), ea = new Int32Array(15);
+      for (var k = 0; k < 15; k++) {
+        var r2 = R2[k];
+        for (p = 0; p <= GLEN && g[p] > r2; p++) { }
+        eg[k] = p;
+        for (p = 0; p <= ALEN && a[p] > r2; p++) { }
+        ea[k] = p;
+      }
+      ENTG.push(eg); ENTA.push(ea);
+    }
+  })();
+  var MULT = [0, 1000];
+  (function () { for (var w = 2; w < 420; w++) MULT.push(Math.floor(MULT[w - 1] * 108 / 100)); })();
+
+  // ------------------------------------------------------------------ targeting parameters
+  var BOLT_A = par("boltA", 300), BOLT_KILL = par("boltKill", 0), BOLT_AIRB = par("boltAir", 0);
+  var CAN_A = par("canA", 400);
+  var FLK_A = par("flkA", 400);
+  var CAN_TY = par("canTy", [1, 1, 1, 1, 1, 1, 1]), CAN_PROG = par("canProg", 0);
+  var BOLT_TYW = par("boltTyW", [0, 0, 0, 0, 0, 0, 0]);
+  var LAN_A = par("lanA", 600), LAN_BRUTE = par("lanBrute", 300);
+  var FRO_PEN = par("froPen", 3000), FRO_SL = par("froSl", 2);
+  var MEND_B = par("mendB", 200);
+  var FRO_TY = par("froTy", [0, 0, 0, 0, 0, 0, 0]);
+  var BOLT_TY = [0, 0, BOLT_AIRB, 0, 0, MEND_B, 0];
+  var LAN_TY = [0, 0, 0, LAN_BRUTE, 0, MEND_B, 0];
+
+  // ------------------------------------------------------------------ simulation state
+  var CAP = 4096;
+  function newState() {
+    var S = {
+      tick: 0, wave: 0, gold: 250, baseHp: 10, nextId: 1, n: 0, dead: 0, fell: false, fallTick: -1,
+      eid: new Int32Array(CAP), ety: new Int8Array(CAP), ehp: new Float64Array(CAP), emx: new Float64Array(CAP),
+      ear: new Int32Array(CAP), epr: new Int32Array(CAP), esu: new Int32Array(CAP), esp: new Int32Array(CAP), ewv: new Int32Array(CAP),
+      tty: new Int8Array(16), ttr: new Int8Array(16), tcd: new Int32Array(16), tsp: new Int32Array(16),
+      sw: [],
+      noFall: false, hpScale: 1, trackW: 0, trackedLeft: 0, pen: 0, leakDmg: 0
+    };
+    for (var i = 0; i < 16; i++) S.tty[i] = -1;
+    return S;
+  }
+  function copyState(D, S) {
+    var n = S.n, i;
+    D.tick = S.tick; D.wave = S.wave; D.gold = S.gold; D.baseHp = S.baseHp; D.nextId = S.nextId; D.n = n; D.dead = S.dead;
+    D.fell = S.fell; D.fallTick = S.fallTick;
+    D.eid.set(S.eid.subarray(0, n)); D.ety.set(S.ety.subarray(0, n)); D.ehp.set(S.ehp.subarray(0, n));
+    D.emx.set(S.emx.subarray(0, n)); D.ear.set(S.ear.subarray(0, n)); D.epr.set(S.epr.subarray(0, n));
+    D.esu.set(S.esu.subarray(0, n)); D.esp.set(S.esp.subarray(0, n)); D.ewv.set(S.ewv.subarray(0, n));
+    D.tty.set(S.tty); D.ttr.set(S.ttr); D.tcd.set(S.tcd); D.tsp.set(S.tsp);
+    D.sw.length = 0;
+    for (i = 0; i < S.sw.length; i++) { var r = S.sw[i]; D.sw.push({ w: r.w, start: r.start, comp: r.comp, next: r.next }); }
+    D.noFall = S.noFall; D.hpScale = S.hpScale; D.trackW = S.trackW; D.trackedLeft = S.trackedLeft; D.pen = S.pen; D.leakDmg = S.leakDmg;
+  }
+  // drops dead entries; the survivors keep their (ascending id) order
+  function compact(S) {
+    var n = S.n, j = 0, i, ety = S.ety;
+    for (i = 0; i < n; i++) {
+      if (ety[i] === DEAD) continue;
+      if (j !== i) {
+        S.eid[j] = S.eid[i]; ety[j] = ety[i]; S.ehp[j] = S.ehp[i]; S.emx[j] = S.emx[i]; S.ear[j] = S.ear[i];
+        S.epr[j] = S.epr[i]; S.esu[j] = S.esu[i]; S.esp[j] = S.esp[i]; S.ewv[j] = S.ewv[i];
+      }
+      j++;
+    }
+    S.n = j; S.dead = 0;
+  }
+
+  function payWave(S, w) {
+    S.wave = w;
+    S.gold += Math.min(50, Math.floor(S.gold * 5 / 100)) + 10 + 2 * w;
+  }
+  function queueWave(S, w, comp) {
+    S.sw.push({ w: w, start: S.tick, comp: comp, next: 0 });
+  }
+  // returns cost (>0) if applied, 0 if invalid. kind: 0 build, 1 upgrade, 2 sell
+  function applyAct(S, kind, slot, type) {
+    var t = S.tty[slot], c;
+    if (kind === 0) {
+      if (t >= 0) return 0;
+      c = T_COST[type];
+      if (S.gold < c) return 0;
+      S.gold -= c; S.tty[slot] = type; S.ttr[slot] = 1; S.tcd[slot] = 0; S.tsp[slot] = c;
+      return c;
+    } else if (kind === 1) {
+      if (t < 0 || S.ttr[slot] >= 3) return 0;
+      c = S.ttr[slot] === 1 ? T_COST[t] : 2 * T_COST[t];
+      if (S.gold < c) return 0;
+      S.gold -= c; S.ttr[slot]++; S.tsp[slot] += c;
+      return c;
+    } else {
+      if (t < 0) return 0;
+      S.gold += Math.floor(S.tsp[slot] * 70 / 100);
+      S.tty[slot] = -1; S.ttr[slot] = 0; S.tcd[slot] = 0; S.tsp[slot] = 0;
+      return 1;
+    }
+  }
+
+  function kill(S, i) {
+    var ety = S.ety, ty = ety[i], p = S.epr[i];
+    S.gold += E_BOUNTY[ty];
+    if (S.ewv[i] <= S.trackW) {
+      S.trackedLeft--;
+      var f = ty === 2 ? p / ALEN : p / GLEN;
+      if (f > S.pen) S.pen = f;
+    }
+    ety[i] = DEAD; S.dead++;
+    if (ty === 4) {
+      var n = S.n, hp = Math.max(1, Math.floor(S.emx[i] / 4)), w = S.ewv[i], born = S.tick + 1;
+      if (n + 3 <= CAP) {
+        for (var c = 0; c < 3; c++, n++) {
+          S.eid[n] = S.nextId++; ety[n] = 6; S.ehp[n] = hp; S.emx[n] = hp; S.ear[n] = 0;
+          S.epr[n] = p; S.esu[n] = 0; S.esp[n] = born; S.ewv[n] = w;
+        }
+        S.n = n;
+        if (w <= S.trackW) S.trackedLeft += 3;
+      }
+    }
+  }
+
+  var NBG = (GLEN >> 4) + 16, NBA = (ALEN >> 4) + 16;
+  var HB = new Float64Array(NBG + 2);
+  var CAND = new Int32Array(CAP);
+  var HEAL = new Int32Array(CAP);
+
+  // One tick, steps 2..6 of the rules (the wave-start step is done by the caller).
+  // rec: optional array that receives (slot, targetId) for every shot.
+  // Slow is kept as "slowed until tick" and age as "spawn tick"; both are exactly equivalent to the rule's counters.
+  function stepTick(S, rec) {
+    var tick = S.tick, n, i, ty, p, k;
+    if (S.dead > 24 && S.dead * 3 > S.n) compact(S);
+    n = S.n;
+    var eid = S.eid, ety = S.ety, ehp = S.ehp, emx = S.emx, ear = S.ear, epr = S.epr, esu = S.esu, esp = S.esp, ewv = S.ewv;
+    var maxG = -1, maxA = -1, nh = 0;
+    // move (ascending id)
+    for (i = 0; i < n; i++) {
+      ty = ety[i];
+      if (ty === DEAD) continue;
+      p = epr[i] + (esu[i] > tick ? E_SLOW[ty] : E_SPEED[ty]);
+      if (ty === 2) {
+        if (p >= ALEN) {
+          S.baseHp -= 2;
+          if (ewv[i] <= S.trackW) { S.trackedLeft--; S.leakDmg += 2 * (1 + ehp[i] / emx[i]); S.pen = 1; }
+          if (S.baseHp <= 0 && !S.noFall) { S.fell = true; S.fallTick = tick; return; }
+          ety[i] = DEAD; S.dead++;
+          continue;
+        }
+        if (p > maxA) maxA = p;
+      } else {
+        if (p >= GLEN) {
+          S.baseHp -= E_LEAK[ty];
+          if (ewv[i] <= S.trackW) { S.trackedLeft--; S.leakDmg += E_LEAK[ty] * (1 + ehp[i] / emx[i]); S.pen = 1; }
+          if (S.baseHp <= 0 && !S.noFall) { S.fell = true; S.fallTick = tick; return; }
+          ety[i] = DEAD; S.dead++;
+          continue;
+        }
+        if (p > maxG) maxG = p;
+        if (ty === 5 && (tick - esp[i] + 1) % 20 === 0) HEAL[nh++] = i;
+      }
+      epr[i] = p;
+    }
+    // spawn (new enemies move once on their spawn tick and are 1 tick old after it)
+    var sw = S.sw;
+    if (sw.length) {
+      for (i = 0; i < sw.length; i++) {
+        var r = sw[i];
+        if (r.next < r.comp.length && r.start + 4 * r.next === tick && n < CAP - 4) {
+          ty = r.comp[r.next++];
+          var w = r.w, mh = Math.floor(E_HP[ty] * MULT[w] / 1000) * S.hpScale;
+          eid[n] = S.nextId++; ety[n] = ty; ehp[n] = mh; emx[n] = mh;
+          ear[n] = ty === 0 ? (w >> 2) : ty === 3 ? 6 + w : 0;
+          p = E_SPEED[ty]; epr[n] = p; esu[n] = 0; esp[n] = tick; ewv[n] = w;
+          if (ty === 2) { if (p > maxA) maxA = p; } else if (p > maxG) maxG = p;
+          n++;
+        }
+      }
+      while (sw.length && sw[0].next >= sw[0].comp.length) sw.shift();
+    }
+    S.n = n;
+    // heal
+    for (k = 0; k < nh; k++) {
+      var m = HEAL[k], mx = GX[epr[m]], my = GY[epr[m]], ddx, ddy;
+      for (i = 0; i < n; i++) {
+        ty = ety[i];
+        if (ty === DEAD) continue;
+        p = epr[i];
+        if (ty === 2) { ddx = AX[p] - mx; ddy = AY[p] - my; } else { ddx = GX[p] - mx; ddy = GY[p] - my; }
+        if (ddx * ddx + ddy * ddy <= 22500) {
+          var h = ehp[i] + Math.floor(emx[i] * 8 / 100);
+          ehp[i] = h > emx[i] ? emx[i] : h;
+        }
+      }
+    }
+    // fire
+    var tty = S.tty, ttr = S.ttr, tcd = S.tcd;
+    for (var s = 0; s < 16; s++) {
+      var tt = tty[s];
+      if (tt < 0) continue;
+      var cd = tcd[s];
+      if (cd > 0) { cd--; tcd[s] = cd; if (cd > 0) continue; }
+      var ri = tt * 3 + ttr[s] - 1;
+      if (!((T_GROUND[tt] && maxG >= ENTG[s][ri]) || (T_AIR[tt] && maxA >= ENTA[s][ri]))) continue;
+      var r2 = R2[ri], dmg = DMG[ri], d2g = D2G[s], d2a = D2A[s];
+      var best = -1, bs = -1e18, sc, eff, hp, u, rem, nc, b, tp, tx, ty2, lim, dx, dy;
+      n = S.n;
+      if (tt === 0) {            // bolt
+        for (i = 0; i < n; i++) {
+          ty = ety[i]; if (ty === DEAD) continue;
+          p = epr[i];
+          if (ty === 2) { if (d2a[p] > r2) continue; rem = ALEN - p; } else { if (d2g[p] > r2) continue; rem = GLEN - p; }
+          eff = dmg - ear[i]; if (eff < 1) eff = 1;
+          hp = ehp[i]; u = eff < hp ? eff : hp;
+          sc = u * BOLT_A / dmg - rem + BOLT_TY[ty] + BOLT_TYW[ty];
+          if (eff >= hp) sc += BOLT_KILL;
+          if (sc > bs) { bs = sc; best = i; }
+        }
+        if (best < 0) continue;
+        eff = dmg - ear[best]; if (eff < 1) eff = 1;
+        ehp[best] -= eff;
+        if (rec) rec.push(s, eid[best]);
+        if (ehp[best] <= 0) kill(S, best);
+      } else if (tt === 2) {     // frost
+        for (i = 0; i < n; i++) {
+          ty = ety[i]; if (ty === DEAD) continue;
+          p = epr[i];
+          if (ty === 2) { if (d2a[p] > r2) continue; rem = ALEN - p; } else { if (d2g[p] > r2) continue; rem = GLEN - p; }
+          sc = FRO_TY[ty] - rem;
+          if (esu[i] - tick > FRO_SL) sc -= FRO_PEN;
+          if (sc > bs) { bs = sc; best = i; }
+        }
+        if (best < 0) continue;
+        eff = dmg - ear[best]; if (eff < 1) eff = 1;
+        ehp[best] -= eff; esu[best] = tick + 30;
+        if (rec) rec.push(s, eid[best]);
+        if (ehp[best] <= 0) kill(S, best);
+      } else if (tt === 3) {     // lance
+        for (i = 0; i < n; i++) {
+          ty = ety[i]; if (ty === DEAD || ty === 2) continue;
+          p = epr[i];
+          if (d2g[p] > r2) continue;
+          hp = ehp[i]; u = dmg < hp ? dmg : hp;
+          sc = u * LAN_A / dmg - (GLEN - p) + LAN_TY[ty];
+          if (sc > bs) { bs = sc; best = i; }
+        }
+        if (best < 0) continue;
+        ehp[best] -= dmg;
+        if (rec) rec.push(s, eid[best]);
+        if (ehp[best] <= 0) kill(S, best);
+      } else if (tt === 1) {     // cannon: aim at the densest, most useful cluster
+        nc = 0;
+        for (i = 0; i < n; i++) {
+          ty = ety[i]; if (ty === DEAD || ty === 2) continue;
+          if (d2g[epr[i]] <= r2) CAND[nc++] = i;
+        }
+        if (!nc) continue;
+        if (nc === 1) best = CAND[0];
+        else {
+          HB.fill(0, 0, NBG);
+          for (i = 0; i < n; i++) {
+            ty = ety[i]; if (ty === DEAD || ty === 2) continue;
+            eff = dmg - ear[i]; if (eff < 1) eff = 1;
+            hp = ehp[i];
+            HB[(epr[i] >> 4) + 8] += (eff < hp ? eff : hp) * CAN_TY[ty] * (1 + CAN_PROG * epr[i] / GLEN);
+          }
+          for (b = 1; b < NBG; b++) HB[b] += HB[b - 1];
+          for (k = 0; k < nc; k++) {
+            i = CAND[k]; p = epr[i]; b = (p >> 4) + 8;
+            sc = (HB[b + 5] - HB[b - 6]) * CAN_A / dmg - (GLEN - p);
+            if (ety[i] === 5) sc += MEND_B;
+            if (sc > bs) { bs = sc; best = i; }
+          }
+        }
+        tp = epr[best]; tx = GX[tp]; ty2 = GY[tp];
+        if (rec) rec.push(s, eid[best]);
+        lim = n;
+        for (i = 0; i < lim; i++) {
+          ty = ety[i]; if (ty === DEAD || ty === 2) continue;
+          p = epr[i];
+          if (p - tp > 128 || tp - p > 128) continue;
+          dx = GX[p] - tx; dy = GY[p] - ty2;
+          if (dx * dx + dy * dy > 8100) continue;
+          eff = dmg - ear[i]; if (eff < 1) eff = 1;
+          ehp[i] -= eff;
+          if (ehp[i] <= 0) kill(S, i);
+        }
+      } else {                   // flak
+        nc = 0;
+        for (i = 0; i < n; i++) {
+          if (ety[i] !== 2) continue;
+          if (d2a[epr[i]] <= r2) CAND[nc++] = i;
+        }
+        if (!nc) continue;
+        if (nc === 1) best = CAND[0];
+        else {
+          HB.fill(0, 0, NBA);
+          for (i = 0; i < n; i++) {
+            if (ety[i] !== 2) continue;
+            hp = ehp[i];
+            HB[(epr[i] >> 4) + 8] += dmg < hp ? dmg : hp;
+          }
+          for (b = 1; b < NBA; b++) HB[b] += HB[b - 1];
+          for (k = 0; k < nc; k++) {
+            i = CAND[k]; p = epr[i]; b = (p >> 4) + 8;
+            sc = (HB[b + 4] - HB[b - 5]) * FLK_A / dmg - (ALEN - p);
+            if (sc > bs) { bs = sc; best = i; }
+          }
+        }
+        tp = epr[best]; tx = AX[tp]; ty2 = AY[tp];
+        if (rec) rec.push(s, eid[best]);
+        lim = n;
+        for (i = 0; i < lim; i++) {
+          if (ety[i] !== 2) continue;
+          p = epr[i];
+          if (p - tp > 100 || tp - p > 100) continue;
+          dx = AX[p] - tx; dy = AY[p] - ty2;
+          if (dx * dx + dy * dy > 4900) continue;
+          ehp[i] -= dmg;
+          if (ehp[i] <= 0) kill(S, i);
+        }
+      }
+      tcd[s] = T_PERIOD[tt];
+    }
+    S.tick = tick + 1;
+  }
+
+  // ------------------------------------------------------------------ wave compositions (known + sampled)
+  var comps = {};
+  comps[1] = [0, 0, 0, 0];
+  function mulberry(a) {
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return (t ^ (t >>> 14)) >>> 0;
+    };
+  }
+  var SAMPLE_MODE = par("sampleMode", 0);
+  function sampleComp(w) {
+    var n = 4 + Math.floor(3 * w / 5), total = 0, t, i, out = [], rnd = mulberry(977 * w + 31337);
+    for (t = 0; t < 6; t++) if (E_FIRST[t] <= w) total += E_WEIGHT[t];
+    if (SAMPLE_MODE === 1) {
+      for (i = 0; i < n; i++) {
+        var r = rnd() % total;
+        for (t = 0; t < 6; t++) { if (E_FIRST[t] > w) continue; if (r < E_WEIGHT[t]) { out.push(t); break; } r -= E_WEIGHT[t]; }
+      }
+      return out;
+    }
+    // stratified: expected counts by largest remainder, then a seeded shuffle
+    var cnt = [], rem = [], used = 0;
+    for (t = 0; t < 6; t++) {
+      var ex = E_FIRST[t] <= w ? n * E_WEIGHT[t] / total : 0;
+      cnt.push(Math.floor(ex)); rem.push(ex - Math.floor(ex)); used += Math.floor(ex);
+    }
+    while (used < n) {
+      var bi = 0;
+      for (t = 1; t < 6; t++) if (rem[t] > rem[bi]) bi = t;
+      cnt[bi]++; rem[bi] = -1; used++;
+    }
+    for (t = 0; t < 6; t++) for (i = 0; i < cnt[t]; i++) out.push(t);
+    for (i = out.length - 1; i > 0; i--) { var j = rnd() % (i + 1), tmp = out[i]; out[i] = out[j]; out[j] = tmp; }
+    return out;
+  }
+  function comp(w) {
+    if (!comps[w]) comps[w] = sampleComp(w);
+    return comps[w];
+  }
+
+  // ------------------------------------------------------------------ look-ahead test
+  var S = newState();          // the shadow of the real game
+  S.tick = 20;
+  var W = newState(), C = newState(), R = newState();
+  var K_TRACK = par("kTrack", 1), J_EXTRA = par("jExtra", 3), TEST_MAX = par("testMax", 480), HP_MARGIN = par("hpMargin", 1.0);
+  var HP_MARGIN2 = par("hpMargin2", 1.5), BANK_CAP = par("bankCap", 1000);
+  var PEN_W = par("penW", 0.001), FALL_BASE = 1000, FALL_LEAK_W = par("fallLeakW", 0.2), POST_FALL = par("postFall", 80);
+  var WORK_SOFT = par("workSoft", 150e6), WORK_HARD = par("workHard", 200e6);   // look-ahead budget in enemy-ticks
+  var simCount = 0, tickCount = 0, workCount = 0;
+
+  // Simulates from `src` (state at a wave start, after payment and purchases, before its spawns are queued)
+  // with no further purchases and enemy HP inflated by `mu`.
+  // Badness: FALL_BASE + (ticks the base falls before the horizon) if the base falls inside the horizon,
+  // otherwise the HP-weighted leak damage of the enemies of the known waves (0 = nothing leaks).
+  function runTest(src, limit, mu) {
+    var w = src.wave, i, n, tr = 0;
+    copyState(R, src);
+    R.noFall = FALL_LEAK_W > 0; R.hpScale = mu; R.trackW = w + K_TRACK; R.pen = 0; R.leakDmg = 0;
+    for (i = 0, n = R.n; i < n; i++) if (R.ety[i] !== DEAD) { tr++; if (mu !== 1) { R.ehp[i] *= mu; R.emx[i] *= mu; } }
+    for (i = 0; i <= K_TRACK; i++) tr += comp(w + i).length;
+    for (i = 0; i < R.sw.length; i++) tr += R.sw[i].comp.length - R.sw[i].next;
+    R.trackedLeft = tr;
+    queueWave(R, w, comp(w));
+    var end = R.tick + TEST_MAX, end0 = end, lastW = w + K_TRACK + J_EXTRA, fallAt = -1, bad;
+    simCount++;
+    while (R.trackedLeft > 0 && R.tick < end) {
+      if (R.tick > src.tick && (R.tick - 20) % 40 === 0) {
+        payWave(R, R.wave + 1);
+        if (R.wave <= lastW) queueWave(R, R.wave, comp(R.wave));
+      }
+      stepTick(R, null);
+      tickCount++; workCount += R.n;
+      if (R.fell) return FALL_BASE + (end - R.fallTick) + R.leakDmg * 0.01;
+      if (fallAt < 0 && R.baseHp <= 0) { fallAt = R.tick - 1; if (fallAt + POST_FALL < end) end = fallAt + POST_FALL; }
+      bad = fallAt < 0 ? R.leakDmg : FALL_BASE + (end0 - fallAt) + FALL_LEAK_W * R.leakDmg;
+      if (bad > limit) return bad;
+    }
+    return fallAt < 0 ? R.leakDmg + PEN_W * R.pen : FALL_BASE + (end0 - fallAt) + FALL_LEAK_W * R.leakDmg;
+  }
+
+  // ------------------------------------------------------------------ purchase policy
+  var MAX_ROUNDS = par("maxRounds", 16), SWAP_ROUNDS = par("swapRounds", 3), COST0 = par("cost0", 0);
+  var FINAL = par("final", [1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 4, 4, 4, 1, 4, 1]);
+  var SWAP_TYPES = par("swapTypes", [0, 1, 2, 4]), RICH = par("rich", 700), SWAP_MIN_GAIN = par("swapMinGain", 3);
+  var REFRESH = par("refresh", 1), REFRESH_TYPES = par("refreshTypes", [0, 1, 0, 1, 0]), REFRESH_MINCD = par("refreshMinCd", 6), REFRESH_MIN_GAIN = par("refreshMinGain", 0.5);
+  var REFRESH_GOLD = par("refreshGold", 300), REFRESH_MAX = par("refreshMax", 6), REFRESH_KEEP = par("refreshKeep", 0);
+
+  function tierCost(t, from, to) {   // gold to take a turret of type t from tier `from` (0 = empty) to tier `to`
+    var c = 0;
+    for (var k = from + 1; k <= to; k++) c += k === 1 ? T_COST[t] : k === 2 ? T_COST[t] : 2 * T_COST[t];
+    return c;
+  }
+  // puts slot s of state D at (type t, tier k), selling what is there if the type differs. Returns the list of ops.
+  function setSlot(D, s, t, k, ops, refresh) {
+    if (D.tty[s] >= 0 && (D.tty[s] !== t || refresh)) { applyAct(D, 2, s, 0); if (ops) ops.push({ op: "sell", slot: s }); }
+    if (D.tty[s] < 0) { if (!applyAct(D, 0, s, t)) return false; if (ops) ops.push({ op: "build", slot: s, type: TNAMES[t] }); }
+    while (D.ttr[s] < k) { if (!applyAct(D, 1, s, 0)) return false; if (ops) ops.push({ op: "upgrade", slot: s }); }
+    return true;
+  }
+  var best = { score: 0, s: -1, t: -1, k: 0, m: 0 };
+  function tryCand(s, t, k, mu, cur, floorGold) {
+    var cost;
+    if (W.tty[s] === t) cost = tierCost(t, W.ttr[s], k);
+    else cost = tierCost(t, 0, k) - (W.tty[s] >= 0 ? Math.floor(W.tsp[s] * 70 / 100) : 0);
+    if (W.gold - cost < floorGold) return;
+    var eff = (cost < 20 ? 20 : cost) + COST0;
+    copyState(C, W);
+    if (!setSlot(C, s, t, k, null)) return;
+    var m = runTest(C, cur - best.score * eff, mu);
+    var sc = (cur - m) / eff;
+    if (sc > best.score) { best.score = sc; best.s = s; best.t = t; best.k = k; best.m = m; }
+  }
+
+  function greedy(mu, floorGold, acts) {
+    var rounds = 0, swaps = 0, s, t, k, i;
+    var cur = runTest(W, 1e9, mu);
+    while (cur > 0.5 && rounds < MAX_ROUNDS && acts.length < 26 && workCount < WORK_HARD) {
+      rounds++;
+      best.score = 0; best.s = -1;
+      var rich = W.gold - floorGold >= RICH;
+      for (s = 0; s < 16; s++) {
+        t = W.tty[s];
+        if (t < 0) {
+          tryCand(s, FINAL[s], 1, mu, cur, floorGold);
+          if (rich) tryCand(s, FINAL[s], 3, mu, cur, floorGold);
+        } else if (W.ttr[s] < 3) {
+          tryCand(s, t, W.ttr[s] + 1, mu, cur, floorGold);
+          if (rich && W.ttr[s] === 1) tryCand(s, t, 3, mu, cur, floorGold);
+        }
+      }
+      if (best.s < 0 && floorGold === 0 && swaps < SWAP_ROUNDS && workCount < WORK_SOFT) {
+        // nothing left to add: try re-shaping the build (same tier, other type)
+        swaps++;
+        for (s = 0; s < 16; s++) {
+          t = W.tty[s];
+          k = t < 0 ? (rich ? 3 : 1) : W.ttr[s];
+          for (i = 0; i < SWAP_TYPES.length; i++) if (SWAP_TYPES[i] !== t) tryCand(s, SWAP_TYPES[i], k, mu, cur, floorGold);
+        }
+        if (best.s >= 0 && cur - best.m < SWAP_MIN_GAIN) best.s = -1;
+      }
+      if (best.s < 0) break;
+      setSlot(W, best.s, best.t, best.k, acts);
+      cur = best.m;
+    }
+    // idle gold late in the game: selling and rebuilding a turret that is mid-cooldown lets it fire again at once
+    if (REFRESH && floorGold === 0 && cur > 0.5 && workCount < WORK_SOFT && W.gold >= REFRESH_GOLD) {
+      var list = [], cost, m;
+      for (s = 0; s < 16; s++) {
+        t = W.tty[s];
+        if (t < 0 || !REFRESH_TYPES[t] || W.tcd[s] < REFRESH_MINCD) continue;
+        cost = W.tsp[s] - Math.floor(W.tsp[s] * 70 / 100);
+        if (W.gold < cost) continue;
+        copyState(C, W);
+        if (!setSlot(C, s, t, W.ttr[s], null, true)) continue;
+        m = runTest(C, cur, mu);
+        if (cur - m >= REFRESH_MIN_GAIN) list.push({ s: s, gain: (cur - m) / cost, cost: cost });
+      }
+      list.sort(function (a, b) { return b.gain - a.gain; });
+      for (i = 0; i < list.length && i < REFRESH_MAX && acts.length <= 28; i++) {
+        if (W.gold - list[i].cost < REFRESH_KEEP) continue;
+        s = list[i].s;
+        setSlot(W, s, W.tty[s], W.ttr[s], acts, true);
+      }
+    }
+  }
+
+  function decide(w) {
+    var acts = [];
+    copyState(W, S);
+    if (workCount >= WORK_HARD) {
+      // safety valve: no more look-ahead, just keep building the target
+      for (var s = 0; s < 16 && acts.length < 24; s++) {
+        var t = W.tty[s] < 0 ? FINAL[s] : W.tty[s];
+        var k = W.tty[s] < 0 ? 1 : Math.min(3, W.ttr[s] + 1);
+        if (W.gold >= tierCost(t, W.tty[s] < 0 ? 0 : W.ttr[s], k)) setSlot(W, s, t, k, acts);
+      }
+      return acts;
+    }
+    greedy(HP_MARGIN, 0, acts);
+    if (W.gold > BANK_CAP && HP_MARGIN2 > HP_MARGIN) greedy(HP_MARGIN2, BANK_CAP, acts);
+    return acts;
+  }
+
+  // ------------------------------------------------------------------ strategy object
+  var desync = false, shots = [], shotPos = 0;
+  var TYPE_IDX = { grunt: 0, runner: 1, wisp: 2, brute: 3, splitter: 4, mender: 5 };
+
+  // Used only if the shadow ever disagrees with the real game: a plain, stateless build-up of the target build.
+  var FB_ORDER = [0, 10, 5, 8, 1, 4, 7, 11, 3, 6, 13, 12, 9, 2, 14, 15];
+  function fallbackPlan(state) {
+    var acts = [], gold = state.gold, slots = state.slots, tier = [], type = [], i, s, pass, c;
+    for (i = 0; i < 16; i++) {
+      var tu = slots && slots[i] ? slots[i].turret : null;
+      type.push(tu ? TNAMES.indexOf(tu.type) : -1); tier.push(tu ? tu.tier : 0);
+    }
+    for (pass = 0; pass < 3 && acts.length < 30; pass++) {
+      for (i = 0; i < 16 && acts.length < 30; i++) {
+        s = FB_ORDER[i];
+        if (tier[s] !== pass) continue;
+        if (pass === 0) {
+          c = T_COST[FINAL[s]];
+          if (gold >= c) { gold -= c; tier[s] = 1; type[s] = FINAL[s]; acts.push({ op: "build", slot: s, type: TNAMES[FINAL[s]] }); }
+        } else if (type[s] >= 0) {
+          c = pass === 1 ? T_COST[type[s]] : 2 * T_COST[type[s]];
+          if (gold >= c) { gold -= c; tier[s] = pass + 1; acts.push({ op: "upgrade", slot: s }); }
+        }
+      }
+    }
+    return acts;
+  }
+
+  function planInner(state) {
+    var w = state.wave, i, n, alive = 0;
+    if (desync) return fallbackPlan(state);
+    // the shadow must be exactly where the real game is; otherwise stop trusting it
+    if (w !== S.wave + 1 || S.fell) { desync = true;return fallbackPlan(state); }
+    var nx = [], nw = state.nextWave;
+    for (i = 0; i < nw.length; i++) { if (TYPE_IDX[nw[i]] === undefined) { desync = true; return fallbackPlan(state); } nx.push(TYPE_IDX[nw[i]]); }
+    comps[w + 1] = nx;
+    payWave(S, w);
+    for (i = 0, n = S.n; i < n; i++) if (S.ety[i] !== DEAD) alive++;
+    if (S.gold !== state.gold || S.baseHp !== state.baseHp || alive !== state.enemies.length) { desync = true;return fallbackPlan(state); }
+    var acts = decide(w), out = [];
+    for (i = 0; i < acts.length && out.length < 32; i++) {
+      var a = acts[i];
+      var ok = a.op === "build" ? applyAct(S, 0, a.slot, TNAMES.indexOf(a.type)) : a.op === "upgrade" ? applyAct(S, 1, a.slot, 0) : applyAct(S, 2, a.slot, 0);
+      if (ok) out.push(a);
+    }
+    // play the coming wave in the shadow and remember which enemy every shot goes to
+    queueWave(S, w, comp(w));
+    shots.length = 0; shotPos = 0;
+    for (i = 0; i < 40 && !S.fell; i++) stepTick(S, shots);
+    return out;
+  }
+
+  var strat = {
+    plan: function (state) {
+      try { return planInner(state); } catch (e) { desync = true; return []; }
+    },
+    target: function (turret, candidates) {
+      if (desync) return undefined;
+      if (shotPos < shots.length && shots[shotPos] === turret.slot) {
+        var id = shots[shotPos + 1];
+        shotPos += 2;
+        for (var k = 0; k < candidates.length; k++) if (candidates[k].id === id) return id;
+      }
+      desync = true;      return undefined;                      // the engine then uses its default target
+    }
+  };
+  return strat;
+}
+</script>
+<script id="rampart-sim">
+function rampartSimulate(createStrategy, seed, maxTicks) {
+  "use strict";
+  // Optional 4th argument: a passive recorder { event(kind, ...), tick(tick, view) } used only by the
+  // replay renderer. It observes the simulation and never changes it.
+  var rec = arguments.length > 3 ? arguments[3] : null;
+
+  var TNAMES = ["bolt", "cannon", "frost", "lance", "flak"];
+  var TDEF = {
+    bolt:   { idx: 0, cost: 50,  dmg: 26,  period: 8,  range: 300, splash: 0,  slow: 0,  pierce: 0, ground: 1, air: 1 },
+    cannon: { idx: 1, cost: 90,  dmg: 60,  period: 24, range: 260, splash: 90, slow: 0,  pierce: 0, ground: 1, air: 0 },
+    frost:  { idx: 2, cost: 70,  dmg: 10,  period: 12, range: 240, splash: 0,  slow: 30, pierce: 0, ground: 1, air: 1 },
+    lance:  { idx: 3, cost: 120, dmg: 180, period: 36, range: 360, splash: 0,  slow: 0,  pierce: 1, ground: 1, air: 0 },
+    flak:   { idx: 4, cost: 80,  dmg: 40,  period: 10, range: 320, splash: 70, slow: 0,  pierce: 0, ground: 0, air: 1 }
+  };
+  var ENAMES = ["grunt", "runner", "wisp", "brute", "splitter", "mender"];
+  var EDEF = {
+    grunt:     { hp: 60,  speed: 10, bounty: 4, leak: 1, air: 0, first: 1, weight: 10 },
+    runner:    { hp: 40,  speed: 20, bounty: 4, leak: 1, air: 0, first: 2, weight: 4 },
+    wisp:      { hp: 50,  speed: 12, bounty: 6, leak: 2, air: 1, first: 3, weight: 3 },
+    brute:     { hp: 150, speed: 6,  bounty: 9, leak: 3, air: 0, first: 4, weight: 3 },
+    splitter:  { hp: 90,  speed: 8,  bounty: 6, leak: 2, air: 0, first: 6, weight: 2 },
+    mender:    { hp: 70,  speed: 8,  bounty: 7, leak: 2, air: 0, first: 8, weight: 1 },
+    splitling: { hp: 0,   speed: 12, bounty: 1, leak: 1, air: 0, first: 0, weight: 0 }
+  };
+  var GROUND_PTS = [[0, 2], [6, 2], [6, 10], [12, 10], [12, 3], [18, 3], [18, 11], [23, 11]];
+  var AIR_PTS = [[0, 6], [21, 6], [21, 11], [23, 11]];
+  var SLOTS = [[3, 3], [5, 5], [7, 4], [7, 8], [9, 9], [10, 5], [11, 8], [13, 8], [14, 5], [15, 2], [16, 7], [17, 4], [19, 8], [20, 10], [22, 9], [3, 7]];
+
+  function mulberry32(a) {
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return (t ^ (t >>> 14)) >>> 0;
+    };
+  }
+
+  function makeRoute(pts) {
+    var segs = [], acc = 0, i;
+    for (i = 0; i + 1 < pts.length; i++) {
+      var ax = pts[i][0] * 100 + 50, ay = pts[i][1] * 100 + 50;
+      var bx = pts[i + 1][0] * 100 + 50, by = pts[i + 1][1] * 100 + 50;
+      var len = Math.abs(bx - ax) + Math.abs(by - ay);
+      segs.push({ ax: ax, ay: ay, dx: bx > ax ? 1 : bx < ax ? -1 : 0, dy: by > ay ? 1 : by < ay ? -1 : 0, start: acc, len: len });
+      acc += len;
+    }
+    return { segs: segs, len: acc };
+  }
+  function place(e) {
+    var segs = e.route.segs, p = e.progress, i = 0;
+    while (i < segs.length - 1 && p > segs[i].start + segs[i].len) i++;
+    var s = segs[i], d = p - s.start;
+    if (d > s.len) d = s.len;
+    e.x = s.ax + s.dx * d;
+    e.y = s.ay + s.dy * d;
+  }
+  var ROUTE_G = makeRoute(GROUND_PTS);
+  var ROUTE_A = makeRoute(AIR_PTS);
+
+  var mult = [0, 1000];
+  function hpMult(w) {
+    while (mult.length <= w) mult.push(Math.floor(mult[mult.length - 1] * 108 / 100));
+    return mult[w];
+  }
+
+  var rng = mulberry32(seed);
+  function genWave(w) {
+    var n = 4 + Math.floor(3 * w / 5), avail = [], total = 0, out = [], i, j;
+    for (i = 0; i < ENAMES.length; i++) {
+      if (EDEF[ENAMES[i]].first <= w) { avail.push(ENAMES[i]); total += EDEF[ENAMES[i]].weight; }
+    }
+    for (i = 0; i < n; i++) {
+      var r = rng() % total;
+      for (j = 0; j < avail.length; j++) {
+        var wt = EDEF[avail[j]].weight;
+        if (r < wt) { out.push(avail[j]); break; }
+        r -= wt;
+      }
+    }
+    return out;
+  }
+
+  var gold = 250, baseHp = 10, wave = 0, fallTick = -1, nextId = 1;
+  var turrets = [], enemies = [], queue = [], log = [], waves = {};
+  var i;
+  for (i = 0; i < 16; i++) turrets.push(null);
+  waves[1] = genWave(1);
+  var strat = createStrategy();
+  var hasTarget = !!strat && typeof strat.target === "function";
+
+  function newEnemy(type, w, maxHp, progress) {
+    var d = EDEF[type];
+    var e = {
+      id: nextId++, type: type, def: d, wave: w, maxHp: maxHp, hp: maxHp,
+      armor: type === "grunt" ? Math.floor(w / 4) : type === "brute" ? 6 + w : 0,
+      progress: progress, slow: 0, age: 0, route: d.air ? ROUTE_A : ROUTE_G, x: 0, y: 0
+    };
+    place(e);
+    enemies.push(e);
+    return e;
+  }
+  function view(e) {
+    return {
+      id: e.id, type: e.type, hp: e.hp, maxHp: e.maxHp, x: e.x, y: e.y, air: e.def.air,
+      armor: e.armor, speed: e.def.speed, slowed: e.slow, remaining: e.route.len - e.progress
+    };
+  }
+  function tierDamage(d, tier) {
+    var v = d.dmg;
+    if (tier >= 2) v = Math.floor(v * 16 / 10);
+    if (tier >= 3) v = Math.floor(v * 16 / 10);
+    return v;
+  }
+  function makeState(tick) {
+    var slots = [], evs = [], k;
+    for (k = 0; k < 16; k++) {
+      var t = turrets[k];
+      slots.push({
+        slot: k, x: SLOTS[k][0] * 100 + 50, y: SLOTS[k][1] * 100 + 50,
+        turret: t ? { type: t.type, tier: t.tier, spent: t.spent } : null
+      });
+    }
+    for (k = 0; k < enemies.length; k++) evs.push(view(enemies[k]));
+    return { tick: tick, wave: wave, gold: gold, baseHp: baseHp, slots: slots, enemies: evs, nextWave: waves[wave + 1].slice() };
+  }
+  function applyActions(tick, actions) {
+    if (!Array.isArray(actions)) return;
+    var n = Math.min(32, actions.length), k;
+    for (k = 0; k < n; k++) {
+      var a = actions[k];
+      if (!a || typeof a !== "object") continue;
+      var s = a.slot;
+      if (typeof s !== "number" || s !== Math.floor(s) || s < 0 || s > 15) continue;
+      var t = turrets[s], d, cost;
+      if (a.op === "build") {
+        if (t || typeof a.type !== "string" || !Object.prototype.hasOwnProperty.call(TDEF, a.type)) continue;
+        d = TDEF[a.type];
+        if (gold < d.cost) continue;
+        gold -= d.cost;
+        turrets[s] = { type: a.type, def: d, tier: 1, spent: d.cost, cd: 0, x: SLOTS[s][0] * 100 + 50, y: SLOTS[s][1] * 100 + 50 };
+        log.push([tick, "B", s, d.idx]);
+        if (rec) rec.event("B", tick, s, d.idx);
+      } else if (a.op === "upgrade") {
+        if (!t || t.tier >= 3) continue;
+        cost = t.tier === 1 ? t.def.cost : 2 * t.def.cost;
+        if (gold < cost) continue;
+        gold -= cost;
+        t.tier += 1;
+        t.spent += cost;
+        log.push([tick, "U", s, t.tier]);
+        if (rec) rec.event("U", tick, s, t.tier);
+      } else if (a.op === "sell") {
+        if (!t) continue;
+        gold += Math.floor(t.spent * 70 / 100);
+        turrets[s] = null;
+        log.push([tick, "S", s, 0]);
+        if (rec) rec.event("S", tick, s, t.def.idx, t.tier);
+      }
+    }
+  }
+
+  var tick, k, e, fell = false;
+  for (tick = 0; tick < maxTicks && !fell; tick++) {
+    // 1. wave start
+    if (tick >= 20 && (tick - 20) % 40 === 0) {
+      wave = (tick - 20) / 40 + 1;
+      gold += Math.min(50, Math.floor(gold * 5 / 100)) + 10 + 2 * wave;
+      waves[wave + 1] = genWave(wave + 1);
+      if (rec) rec.event("W", tick, wave, waves[wave + 1]);
+      applyActions(tick, strat.plan(makeState(tick)));
+      var comp = waves[wave];
+      for (k = 0; k < comp.length; k++) queue.push({ tick: tick + 4 * k, wave: wave, index: k, type: comp[k] });
+      queue.sort(function (p, q) { return p.tick - q.tick || p.wave - q.wave || p.index - q.index; });
+      delete waves[wave];
+    }
+    // 2. spawn
+    while (queue.length && queue[0].tick <= tick) {
+      var q = queue.shift();
+      newEnemy(q.type, q.wave, Math.floor(EDEF[q.type].hp * hpMult(q.wave) / 1000), 0);
+    }
+    // 3. move
+    for (k = 0; k < enemies.length; k++) {
+      e = enemies[k];
+      e.progress += e.slow > 0 ? Math.floor(e.def.speed * 60 / 100) : e.def.speed;
+      if (e.progress >= e.route.len) {
+        baseHp -= e.def.leak;
+        enemies.splice(k, 1);
+        k--;
+        log.push([tick, "L", e.id, baseHp]);
+        if (rec) rec.event("L", tick, e.id, baseHp, e.type);
+        if (baseHp <= 0) {
+          log.push([tick, "F", wave, 0]);
+          if (rec) rec.event("F", tick, wave, 0);
+          fallTick = tick;
+          fell = true;
+          break;
+        }
+      } else {
+        place(e);
+      }
+    }
+    if (!fell) {
+      // 4. age & heal
+      for (k = 0; k < enemies.length; k++) {
+        e = enemies[k];
+        e.age += 1;
+        if (e.type === "mender" && e.age % 20 === 0) {
+          for (var j = 0; j < enemies.length; j++) {
+            var o = enemies[j], hx = o.x - e.x, hy = o.y - e.y;
+            if (hx * hx + hy * hy <= 150 * 150) {
+              o.hp = Math.min(o.maxHp, o.hp + Math.floor(o.maxHp * 8 / 100));
+            }
+          }
+          if (rec) rec.event("H", tick, e.id, e.x, e.y);
+        }
+      }
+      // 5. turrets fire
+      for (var s = 0; s < 16; s++) {
+        var t = turrets[s];
+        if (!t) continue;
+        if (t.cd > 0) { t.cd -= 1; if (t.cd > 0) continue; }
+        var d = t.def, range = d.range + 30 * (t.tier - 1), r2 = range * range, cands = [];
+        for (k = 0; k < enemies.length; k++) {
+          e = enemies[k];
+          if (e.def.air ? !d.air : !d.ground) continue;
+          var dx = e.x - t.x, dy = e.y - t.y;
+          if (dx * dx + dy * dy <= r2) cands.push(e);
+        }
+        if (!cands.length) continue;
+        var tgt = null;
+        if (hasTarget) {
+          var views = [];
+          for (k = 0; k < cands.length; k++) views.push(view(cands[k]));
+          var pick = strat.target({ slot: s, type: t.type, tier: t.tier, x: t.x, y: t.y, range: range }, views);
+          for (k = 0; k < cands.length; k++) if (cands[k].id === pick) { tgt = cands[k]; break; }
+        }
+        if (!tgt) {
+          tgt = cands[0];
+          for (k = 1; k < cands.length; k++) {
+            if (cands[k].route.len - cands[k].progress < tgt.route.len - tgt.progress) tgt = cands[k];
+          }
+        }
+        var dmg = tierDamage(d, t.tier), tx = tgt.x, ty = tgt.y, hits = [];
+        if (d.splash > 0) {
+          var sp2 = d.splash * d.splash;
+          for (k = 0; k < enemies.length; k++) {
+            e = enemies[k];
+            if (e.def.air ? !d.air : !d.ground) continue;
+            var sx = e.x - tx, sy = e.y - ty;
+            if (sx * sx + sy * sy <= sp2) hits.push(e);
+          }
+        } else {
+          hits.push(tgt);
+        }
+        for (k = 0; k < hits.length; k++) {
+          e = hits[k];
+          e.hp -= d.pierce ? dmg : Math.max(1, dmg - e.armor);
+          if (d.slow > 0) e.slow = d.slow;
+        }
+        t.cd = d.period;
+        if (rec) rec.event("X", tick, s, d.idx, tgt.id, tx, ty, tgt.def.air);
+        // remove the dead in ascending id order (splitlings are appended with new, larger ids)
+        for (k = 0; k < enemies.length; k++) {
+          e = enemies[k];
+          if (e.hp > 0) continue;
+          enemies.splice(k, 1);
+          k--;
+          gold += e.def.bounty;
+          log.push([tick, "K", e.id, s]);
+          if (rec) rec.event("K", tick, e.id, s, e.type, e.progress);
+          if (e.type === "splitter") {
+            var chp = Math.max(1, Math.floor(e.maxHp / 4));
+            for (var c = 0; c < 3; c++) {
+              var child = newEnemy("splitling", e.wave, chp, e.progress);
+              if (rec) rec.event("P", tick, child.id, e.id);
+            }
+          }
+        }
+      }
+      // 6. slow timers
+      for (k = 0; k < enemies.length; k++) if (enemies[k].slow > 0) enemies[k].slow -= 1;
+    }
+    if (rec) rec.tick(tick, { wave: wave, gold: gold, baseHp: baseHp, enemies: enemies, turrets: turrets, nextWave: waves[wave + 1] || [], fell: fell });
+  }
+
+  var endTick = fallTick >= 0 ? fallTick : maxTicks;
+  var str = JSON.stringify(log), h = 0x811c9dc5;
+  for (i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  var hex = (h >>> 0).toString(16);
+  while (hex.length < 8) hex = "0" + hex;
+  return { score: Math.round((endTick - 20) * 100 / 40) / 100, fallTick: fallTick, log: log, hash: hex };
+}
+</script>
+<script>
+const DURATION = 100;
+(function () {
+  'use strict';
+  var TPS = 20, TOTAL_TICKS = 2020;
+
+  window.BENCH_REPORT = {
+    selfCheck: { vectorA: false, vectorB: false },
+    strategy: { summary: "Look-ahead (model-predictive) play. createStrategy() carries an exact private copy of the rules (a shadow game) that is advanced wave by wave and cross-checked against state.wave/gold/baseHp/enemy count. Purchases are just-in-time: at each wave start the shadow simulates the known waves (current + previewed, plus stratified guesses for the next three) with the current turrets and spends gold only when that predicts leaks, on the build/upgrade with the best leak reduction per gold; everything else stays banked for interest. Every slot has a target type (cannons upstream, four flak at the end of the air lane, one frost). When the build is maxed the same look-ahead swaps turret types and, with idle gold, sells and rebuilds turrets that are mid-cooldown (a rebuilt turret fires at once). target() replays the shadow's per-shot choices: cannons and flak aim at the densest useful cluster (weighted by enemy type and progress), bolts and lances avoid overkill, frost prefers un-slowed leaders. If the shadow ever disagreed with the real game it falls back to a stateless build order and default targeting. Parameters were tuned on seeds 101-148 and 1001-1056; the reported mean is from 100 untouched seeds (5001-5100): mean 47.88 waves, min 43.7, max 52.1. About 0.8 s of CPU per game under V8.", seedsTested: 100, meanScoreOnTestedSeeds: 47.88 },
+    seed42: { score: null, fallTick: null },
+    systems: { board: "full", enemiesAndTurrets: "full", combatVisuals: "full", fall: "full", hud: "full", audio: "full" },
+    simplifications: ["Air lane length is the geometric length of the stated polyline (2800 centi-tiles); the 2600 quoted in the rules text does not reproduce self-check vectors A and B, 2800 does.", "rampartSimulate accepts an optional 4th argument (a passive recorder) that the page uses to capture per-tick state for the replay; with 3 arguments it behaves exactly as specified.", "Enemies that share a position (same-tick spawns of overlapping waves, splitlings) are drawn with a small seeded sideways offset so stacks stay readable; simulation positions are unchanged.", "Health bars are drawn without depth testing and overlap heavily in dense late-game stacks.", "The post-fall desaturation is applied in the scene materials (one shared uniform); the HUD overlay keeps its colours.", "Sound was exercised for runtime errors in a headless WebKit view (AudioContext running, all one-shot paths created) but nobody listened to the mix.", "Browser testing used a headless WKWebView (WebKit, Apple GPU) with scripted frames, not desktop Chrome; measuredFps is the render throughput measured there (frame time incl. gl.finish at 1920x1080 CSS px, DPR 2), not a vsync-limited Chrome reading."],
+    testedInBrowser: true,
+    measuredFps: 91
+  };
+
+  // The scripts live in <head>, so everything that touches the page waits for the DOM.
+  function boot() {
+  // ------------------------------------------------------------------ seeded visual randomness (seed 42)
+  function mulberry32(a) {
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return (t ^ (t >>> 14)) >>> 0;
+    };
+  }
+  var visualRng = mulberry32(42), VR = new Float32Array(4096);
+  (function () { for (var i = 0; i < 4096; i++) VR[i] = visualRng() / 4294967296; })();
+  function vr(i) { return VR[i & 4095]; }
+  function clamp01(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+  function smooth(x) { x = clamp01(x); return x * x * (3 - 2 * x); }
+  function noise1(x, off) {            // smooth seeded value noise in [-1, 1]
+    var i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f);
+    var a = VR[(i + off) & 4095], b = VR[(i + 1 + off) & 4095];
+    return (a + (b - a) * u) * 2 - 1;
+  }
+
+  // ------------------------------------------------------------------ board layout (display only)
+  var GROUND_PTS = [[0, 2], [6, 2], [6, 10], [12, 10], [12, 3], [18, 3], [18, 11], [23, 11]];
+  var AIR_PTS = [[0, 6], [21, 6], [21, 11], [23, 11]];
+  var SLOT_TILES = [[3, 3], [5, 5], [7, 4], [7, 8], [9, 9], [10, 5], [11, 8], [13, 8], [14, 5], [15, 2], [16, 7], [17, 4], [19, 8], [20, 10], [22, 9], [3, 7]];
+  var KEEP_X = 23.5, KEEP_Z = 11.5;
+  var ENEMY_INDEX = { grunt: 0, runner: 1, wisp: 2, brute: 3, splitter: 4, mender: 5, splitling: 6 };
+  function makeRoute(pts) {
+    var segs = [], acc = 0;
+    for (var i = 0; i + 1 < pts.length; i++) {
+      var ax = pts[i][0] + 0.5, az = pts[i][1] + 0.5, bx = pts[i + 1][0] + 0.5, bz = pts[i + 1][1] + 0.5;
+      var len = Math.round((Math.abs(bx - ax) + Math.abs(bz - az)) * 100);
+      segs.push({ ax: ax, az: az, bx: bx, bz: bz, dx: Math.sign(bx - ax), dz: Math.sign(bz - az), start: acc, len: len });
+      acc += len;
+    }
+    return { segs: segs, total: acc };
+  }
+  var ROUTE_G = makeRoute(GROUND_PTS), ROUTE_A = makeRoute(AIR_PTS);
+  function routePoint(route, p, out) {
+    if (p < 0) p = 0; else if (p > route.total) p = route.total;
+    var segs = route.segs, i = 0;
+    while (i < segs.length - 1 && p > segs[i].start + segs[i].len) i++;
+    var s = segs[i], d = (p - s.start) / 100;
+    out.x = s.ax + s.dx * d; out.z = s.az + s.dz * d;
+    return out;
+  }
+
+  // ------------------------------------------------------------------ replay (seed 42), recorded from rampart-sim
+  function buildReplay() {
+    var snaps = new Array(TOTAL_TICKS), gold = new Int32Array(TOTAL_TICKS), hp = new Int8Array(TOTAL_TICKS), wave = new Int16Array(TOTAL_TICKS);
+    var shots = [], kills = [], heals = [], leaks = [], acts = [], waveStarts = [], fall = null;
+    var spawnTick = [], isChild = [], nextByWave = [], lastTick = -1, i;
+    function countTypes(list) { var c = [0, 0, 0, 0, 0, 0]; for (var k = 0; k < list.length; k++) c[ENEMY_INDEX[list[k]]]++; return c; }
+    var rec = {
+      event: function (kind, tick, a, b, c, d, e, f) {
+        if (kind === 'X') shots.push({ tick: tick, slot: a, type: b, id: c, x: d / 100, z: e / 100, air: f });
+        else if (kind === 'K') kills.push({ tick: tick, id: a, slot: b, type: ENEMY_INDEX[c], prog: d });
+        else if (kind === 'H') heals.push({ tick: tick, x: b / 100, z: c / 100 });
+        else if (kind === 'L') leaks.push({ tick: tick, id: a, hp: Math.max(0, b), type: ENEMY_INDEX[c] });
+        else if (kind === 'F') fall = { tick: tick, wave: a };
+        else if (kind === 'W') { waveStarts.push({ tick: tick, wave: a }); nextByWave[a] = countTypes(b); }
+        else if (kind === 'B') acts.push({ tick: tick, kind: 0, slot: a, type: b, tier: 1 });
+        else if (kind === 'U') acts.push({ tick: tick, kind: 1, slot: a, type: -1, tier: b });
+        else if (kind === 'S') acts.push({ tick: tick, kind: 2, slot: a, type: b, tier: c });
+        else if (kind === 'P') isChild[a] = 1;
+      },
+      tick: function (tick, v) {
+        var es = v.enemies, n = es.length;
+        var s = { n: n, id: new Int32Array(n), ty: new Uint8Array(n), pr: new Float32Array(n), hp: new Float32Array(n), sl: new Uint8Array(n) };
+        for (var k = 0; k < n; k++) {
+          var e = es[k];
+          s.id[k] = e.id; s.ty[k] = ENEMY_INDEX[e.type]; s.pr[k] = e.progress;
+          s.hp[k] = Math.max(0, Math.min(1, e.hp / e.maxHp)); s.sl[k] = e.slow > 0 ? 1 : 0;
+          if (spawnTick[e.id] === undefined) spawnTick[e.id] = tick;
+        }
+        snaps[tick] = s; gold[tick] = v.gold; hp[tick] = Math.max(0, v.baseHp); wave[tick] = v.wave; lastTick = tick;
+        if (nextByWave[v.wave] === undefined) nextByWave[v.wave] = countTypes(v.nextWave);
+      }
+    };
+    var result = rampartSimulate(createStrategy, 42, 2020, rec);
+    for (i = lastTick + 1; i < TOTAL_TICKS; i++) { snaps[i] = snaps[lastTick]; gold[i] = gold[lastTick]; hp[i] = hp[lastTick]; wave[i] = wave[lastTick]; }
+    function indexByTick(list) {
+      var idx = new Int32Array(TOTAL_TICKS + 2), j = 0;
+      for (var t = 0; t <= TOTAL_TICKS + 1; t++) { while (j < list.length && list[j].tick < t) j++; idx[t] = j; }
+      return idx;
+    }
+    // enemies that vanish during a tick: where they were when they died / leaked
+    var gone = {};
+    for (i = 0; i < kills.length; i++) { (gone[kills[i].tick] || (gone[kills[i].tick] = {}))[kills[i].id] = kills[i].prog; }
+    for (i = 0; i < leaks.length; i++) { (gone[leaks[i].tick] || (gone[leaks[i].tick] = {}))[leaks[i].id] = leaks[i].type === 2 ? ROUTE_A.total : ROUTE_G.total; }
+    // turret timeline per slot
+    var spans = [], slotShots = [];
+    for (i = 0; i < 16; i++) { spans.push([{ tick: -1, type: -1, tier: 0, kind: -1 }]); slotShots.push([]); }
+    for (i = 0; i < acts.length; i++) {
+      var a = acts[i], sp = spans[a.slot], cur = sp[sp.length - 1];
+      if (a.kind === 0) sp.push({ tick: a.tick, type: a.type, tier: 1, kind: 0, built: a.tick });
+      else if (a.kind === 1) { a.type = cur.type; sp.push({ tick: a.tick, type: cur.type, tier: a.tier, kind: 1, built: cur.built }); }
+      else sp.push({ tick: a.tick, type: -1, tier: 0, kind: 2, built: -1 });
+    }
+    for (i = 0; i < shots.length; i++) slotShots[shots[i].slot].push(shots[i]);
+    // trauma events: leaks +0.3, fall +1.0
+    var bumps = [];
+    for (i = 0; i < leaks.length; i++) bumps.push({ t: leaks[i].tick / TPS, add: 0.3 });
+    if (fall) bumps.push({ t: fall.tick / TPS, add: 1.0 });
+    return {
+      result: result, snaps: snaps, gold: gold, hp: hp, wave: wave, lastTick: lastTick, fall: fall,
+      shots: shots, kills: kills, heals: heals, leaks: leaks, acts: acts, waveStarts: waveStarts,
+      shotIdx: indexByTick(shots), killIdx: indexByTick(kills), healIdx: indexByTick(heals), leakIdx: indexByTick(leaks),
+      actIdx: indexByTick(acts), waveIdx: indexByTick(waveStarts),
+      spawnTick: spawnTick, isChild: isChild, nextByWave: nextByWave, gone: gone, spans: spans, slotShots: slotShots, bumps: bumps
+    };
+  }
+  var rep = buildReplay();
+  window.BENCH_REPORT.seed42.score = rep.result.score;
+  window.BENCH_REPORT.seed42.fallTick = rep.result.fallTick;
+  // self-check vectors of the spec, run against the embedded rampart-sim
+  (function () {
+    try {
+      var A = function () { return { plan: function (s) { var a = [], g = s.gold; for (var i = 0; i < s.slots.length; i++) { var sl = s.slots[i]; if (!sl.turret && g >= 50) { a.push({ op: "build", slot: sl.slot, type: "bolt" }); g -= 50; } } return a; } }; };
+      var B = function () {
+        return {
+          plan: function (s) {
+            if (s.wave === 1) return [{ op: "build", slot: 3, type: "cannon" }, { op: "build", slot: 6, type: "frost" }];
+            if (s.wave === 3) return [{ op: "upgrade", slot: 3 }, { op: "build", slot: 12, type: "flak" }];
+            if (s.wave === 6) return [{ op: "build", slot: 8, type: "lance" }, { op: "sell", slot: 6 }];
+            return [];
+          }
+        };
+      };
+      var ra = rampartSimulate(A, 42, 12020), rb = rampartSimulate(B, 7, 12020);
+      window.BENCH_REPORT.selfCheck.vectorA = ra.hash === "82a5353d" && ra.fallTick === 1035 && ra.score === 25.38 && ra.log.length === 166;
+      window.BENCH_REPORT.selfCheck.vectorB = rb.hash === "2e8858d7" && rb.fallTick === 457 && rb.score === 10.93 && rb.log.length === 48;
+    } catch (e) { /* leaves both false */ }
+  })();
+  var T_FALL = rep.fall ? rep.fall.tick / TPS : Infinity;
+
+  // ------------------------------------------------------------------ renderer, camera, lights
+  var canvas = document.getElementById('stage');
+  var renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('stage'), antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.12;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setClearColor(0x000000, 0);
+  renderer.autoClear = false;
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 500);
+  var CAM_TARGET = new THREE.Vector3(12, 0, 7), CAM_ELEV = 55 * Math.PI / 180;
+  var CAM_DIR = new THREE.Vector3(0, Math.sin(CAM_ELEV), Math.cos(CAM_ELEV));
+  var camBase = new THREE.Vector3(), camRight = new THREE.Vector3(), camUp = new THREE.Vector3();
+  var hudCam = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1), hudScene = new THREE.Scene();
+  var VW = 1, VH = 1;
+
+  function fitCamera() {
+    VW = window.innerWidth; VH = window.innerHeight;
+    renderer.setSize(VW, VH, false);
+    camera.aspect = VW / VH;
+    camera.updateProjectionMatrix();
+    // screen rectangle the padded board must stay inside (clear of the dock and of the HUD stack)
+    var top = Math.max(24, VH * 0.135), bottom = 98, side = 12;
+    var availH = Math.max(60, VH - top - bottom), availW = Math.max(60, VW - 2 * side);
+    var pts = [], xs = [-0.7, 24.7], zs = [-0.7, 14.7], ys = [0, 1.3], a, b, c;
+    for (a = 0; a < 2; a++) for (b = 0; b < 2; b++) for (c = 0; c < 2; c++) pts.push(new THREE.Vector3(xs[a], ys[c], zs[b]));
+    var v = new THREE.Vector3(), lo = 6, hi = 400, mid, it, ymin = 0, ymax = 0;
+    function measure(d) {
+      camera.position.copy(CAM_TARGET).addScaledVector(CAM_DIR, d);
+      camera.lookAt(CAM_TARGET);
+      camera.updateMatrixWorld(true);
+      var xmax = 0; ymin = 1e9; ymax = -1e9;
+      for (var i = 0; i < pts.length; i++) {
+        v.copy(pts[i]).project(camera);
+        if (Math.abs(v.x) > xmax) xmax = Math.abs(v.x);
+        if (v.y < ymin) ymin = v.y;
+        if (v.y > ymax) ymax = v.y;
+      }
+      return xmax * VW <= availW && (ymax - ymin) * 0.5 * VH <= availH;
+    }
+    for (it = 0; it < 40; it++) { mid = (lo + hi) / 2; if (measure(mid)) hi = mid; else lo = mid; }
+    measure(hi);
+    camBase.copy(camera.position);
+    // shift the image vertically so the board sits in the free band (keeps perspective untouched)
+    var wantCentre = 1 - 2 * (top + availH / 2) / VH, shift = wantCentre - (ymin + ymax) / 2;
+    camera.projectionMatrix.elements[9] -= shift;
+    camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+    camRight.setFromMatrixColumn(camera.matrixWorld, 0);
+    camUp.setFromMatrixColumn(camera.matrixWorld, 1);
+    hudCam.left = 0; hudCam.right = VW; hudCam.top = VH; hudCam.bottom = 0;
+    hudCam.updateProjectionMatrix();
+  }
+
+  function C(hex) { return new THREE.Color(hex).convertSRGBToLinear(); }
+  var DESAT = { value: 0 };
+  function patch(mat) {                // lets the whole scene fade to grey after the fall
+    mat.onBeforeCompile = function (shader) {
+      shader.uniforms.uDesat = DESAT;
+      shader.fragmentShader = 'uniform float uDesat;\n' + shader.fragmentShader.replace('#include <dithering_fragment>',
+        '#include <dithering_fragment>\n\tgl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( dot( gl_FragColor.rgb, vec3( 0.299, 0.587, 0.114 ) ) ), uDesat );');
+    };
+    return mat;
+  }
+  function std(o) { return patch(new THREE.MeshStandardMaterial(o)); }
+  function basic(o) { return patch(new THREE.MeshBasicMaterial(o)); }
+  function additive(o) { o.transparent = true; o.depthWrite = false; o.blending = THREE.AdditiveBlending; return basic(o); }
+
+  scene.add(new THREE.HemisphereLight(C(0x8ea6f0), C(0x2a2622), 1.15));
+  var keyLight = new THREE.DirectionalLight(C(0xffbf94), 1.9);
+  keyLight.position.set(12 - 16, 13, 7 + 12);
+  keyLight.target.position.set(12, 0, 7);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(2048, 2048);
+  keyLight.shadow.camera.left = -17; keyLight.shadow.camera.right = 17;
+  keyLight.shadow.camera.top = 13; keyLight.shadow.camera.bottom = -13;
+  keyLight.shadow.camera.near = 2; keyLight.shadow.camera.far = 60;
+  keyLight.shadow.bias = -0.0006; keyLight.shadow.normalBias = 0.03;
+  scene.add(keyLight); scene.add(keyLight.target);
+  var rim = new THREE.DirectionalLight(C(0x5f7fd0), 0.55);
+  rim.position.set(30, 10, -8); rim.target.position.set(12, 0, 7);
+  scene.add(rim); scene.add(rim.target);
+
+  // ------------------------------------------------------------------ procedural textures (detached canvases)
+  function makeCanvas(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  function texFrom(cv, repeat) {
+    var t = new THREE.CanvasTexture(cv);
+    t.encoding = THREE.sRGBEncoding;
+    if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
+    t.anisotropy = 4;
+    return t;
+  }
+  function tr() { return visualRng() / 4294967296; }
+  var terrainTex = (function () {
+    var cv = makeCanvas(1040, 640), g = cv.getContext('2d'), i, x, y, r;
+    g.fillStyle = '#2f3d3a'; g.fillRect(0, 0, 1040, 640);
+    for (i = 0; i < 900; i++) {
+      x = tr() * 1040; y = tr() * 640; r = 8 + tr() * 46;
+      var shade = tr(), rgb = shade < 0.45 ? '14,20,22' : shade < 0.8 ? '72,100,80' : '100,84,66', bg = g.createRadialGradient(x, y, 0, x, y, r);
+      bg.addColorStop(0, 'rgba(' + rgb + ',0.22)'); bg.addColorStop(1, 'rgba(' + rgb + ',0)');
+      g.fillStyle = bg; g.fillRect(x - r, y - r, 2 * r, 2 * r);
+    }
+    for (i = 0; i < 2600; i++) {
+      x = tr() * 1040; y = tr() * 640;
+      g.fillStyle = tr() < 0.5 ? 'rgba(12,16,18,0.35)' : 'rgba(130,150,140,0.18)';
+      g.fillRect(x, y, 1 + tr() * 2.5, 1 + tr() * 2.5);
+    }
+    g.strokeStyle = 'rgba(0,0,0,0.10)'; g.lineWidth = 1;
+    for (i = 0; i <= 26; i++) { g.beginPath(); g.moveTo(i * 40, 0); g.lineTo(i * 40, 640); g.stroke(); }
+    for (i = 0; i <= 16; i++) { g.beginPath(); g.moveTo(0, i * 40); g.lineTo(1040, i * 40); g.stroke(); }
+    return texFrom(cv, false);
+  })();
+  var roadTex = (function () {
+    var cv = makeCanvas(128, 128), g = cv.getContext('2d'), i, j;
+    g.fillStyle = '#14161c'; g.fillRect(0, 0, 128, 128);
+    for (j = 0; j < 4; j++) for (i = 0; i < 4; i++) {
+      var ox = (j % 2) * 16, v = 30 + Math.floor(tr() * 20);
+      g.fillStyle = 'rgb(' + v + ',' + (v + 5) + ',' + (v + 16) + ')';
+      g.fillRect(((i * 32 + ox) % 128) + 2, j * 32 + 2, 28, 28);
+      if (i * 32 + ox + 30 > 128) g.fillRect(-(128 - (i * 32 + ox)) + 2, j * 32 + 2, 28, 28);
+    }
+    return texFrom(cv, true);
+  })();
+  var glowTex = (function () {
+    var cv = makeCanvas(64, 64), g = cv.getContext('2d');
+    var gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    return texFrom(cv, false);
+  })();
+  var dashTex = (function () {
+    var cv = makeCanvas(64, 16), g = cv.getContext('2d');
+    var gr = g.createLinearGradient(0, 0, 64, 0);
+    gr.addColorStop(0, 'rgba(255,255,255,0.16)'); gr.addColorStop(0.2, 'rgba(255,255,255,0.22)'); gr.addColorStop(0.34, 'rgba(255,255,255,1)');
+    gr.addColorStop(0.62, 'rgba(255,255,255,1)'); gr.addColorStop(0.76, 'rgba(255,255,255,0.22)'); gr.addColorStop(1, 'rgba(255,255,255,0.16)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 16);
+    var gv = g.createLinearGradient(0, 0, 0, 16);
+    gv.addColorStop(0, 'rgba(0,0,0,1)'); gv.addColorStop(0.5, 'rgba(0,0,0,0)'); gv.addColorStop(1, 'rgba(0,0,0,1)');
+    g.globalCompositeOperation = 'destination-out'; g.fillStyle = gv; g.fillRect(0, 0, 64, 16);
+    var t = texFrom(cv, true);
+    return t;
+  })();
+
+  // ------------------------------------------------------------------ geometry helpers
+  var _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _col = new THREE.Color();
+  function part(geo, color, x, y, z, rx, ry, rz, sx, sy, sz) {
+    var m = new THREE.Matrix4();
+    m.compose(new THREE.Vector3(x || 0, y || 0, z || 0), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx || 0, ry || 0, rz || 0)),
+      new THREE.Vector3(sx === undefined ? 1 : sx, sy === undefined ? 1 : sy, sz === undefined ? 1 : sz));
+    return { geo: geo, color: color, m: m };
+  }
+  function merge(parts) {
+    var list = [], total = 0, i, k;
+    for (i = 0; i < parts.length; i++) {
+      var g = parts[i].geo.index ? parts[i].geo.toNonIndexed() : parts[i].geo.clone();
+      g.applyMatrix4(parts[i].m);
+      list.push(g); total += g.attributes.position.count;
+    }
+    var pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), col = new Float32Array(total * 3), o = 0;
+    for (i = 0; i < list.length; i++) {
+      var n = list[i].attributes.position.count, c = C(parts[i].color);
+      pos.set(list[i].attributes.position.array, o * 3);
+      nor.set(list[i].attributes.normal.array, o * 3);
+      for (k = 0; k < n; k++) { col[(o + k) * 3] = c.r; col[(o + k) * 3 + 1] = c.g; col[(o + k) * 3 + 2] = c.b; }
+      o += n;
+      list[i].dispose();
+    }
+    var out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    out.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    return out;
+  }
+  function instanced(geo, mat, cap, shadow) {
+    var m = new THREE.InstancedMesh(geo, mat, cap);
+    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    m.setColorAt(0, _col.setRGB(1, 1, 1));
+    m.instanceColor.setUsage(THREE.DynamicDrawUsage);
+    m.count = 0;
+    m.frustumCulled = false;
+    m.castShadow = !!shadow; m.receiveShadow = false;
+    scene.add(m);
+    return m;
+  }
+  var BOX = new THREE.BoxGeometry(1, 1, 1);
+  function box(w, h, d) { return new THREE.BoxGeometry(w, h, d); }
+  function cyl(rt, rb, h, seg) { return new THREE.CylinderGeometry(rt, rb, h, seg); }
+  function sph(r, a, b) { return new THREE.SphereGeometry(r, a || 10, b || 8); }
+
+  // ------------------------------------------------------------------ world: slab, terrain, road, air lane, pads, rocks
+  (function () {
+    var slab = new THREE.Mesh(box(26.4, 0.9, 16.4), std({ color: C(0x16181d), roughness: 1 }));
+    slab.position.set(12, -0.46, 7); slab.receiveShadow = true; scene.add(slab);
+    var ground = new THREE.Mesh(new THREE.PlaneGeometry(26, 16), std({ map: terrainTex, roughness: 0.96, metalness: 0 }));
+    ground.rotation.x = -Math.PI / 2; ground.position.set(12, 0, 7); ground.receiveShadow = true; scene.add(ground);
+
+    // road: flat strips with world-space UVs (a kerb strip underneath gives it a dark outline)
+    function strips(route, width, y, uvScale, alongU) {
+      var pos = [], uv = [], nor = [], hw = width / 2, i;
+      for (i = 0; i < route.segs.length; i++) {
+        var s = route.segs[i], x0, x1, z0, z1;
+        var ext0 = alongU && i > 0 ? hw : (alongU ? 0 : -hw), ext1 = hw;
+        if (s.dx !== 0) { x0 = s.ax + s.dx * ext0; x1 = s.bx + s.dx * ext1; z0 = s.az - hw; z1 = s.az + hw; }
+        else { z0 = s.az + s.dz * ext0; z1 = s.bz + s.dz * ext1; x0 = s.ax - hw; x1 = s.ax + hw; }
+        var xa = Math.min(x0, x1), xb = Math.max(x0, x1), za = Math.min(z0, z1), zb = Math.max(z0, z1);
+        pos.push(xa, y, za, xa, y, zb, xb, y, zb, xa, y, za, xb, y, zb, xb, y, za);
+        for (var k = 0; k < 6; k++) nor.push(0, 1, 0);
+        if (alongU) {
+          // u runs along the lane (so the dash texture flows toward the keep), v across it
+          var u0 = s.start / 100 * uvScale, u1 = (s.start + s.len) / 100 * uvScale;
+          if (s.dx > 0) uv.push(u0, 0, u0, 1, u1, 1, u0, 0, u1, 1, u1, 0);
+          else if (s.dx < 0) uv.push(u1, 0, u1, 1, u0, 1, u1, 0, u0, 1, u0, 0);
+          else if (s.dz > 0) uv.push(u0, 0, u1, 0, u1, 1, u0, 0, u1, 1, u0, 1);
+          else uv.push(u1, 0, u0, 0, u0, 1, u1, 0, u0, 1, u1, 1);
+        } else {
+          uv.push(xa * uvScale, za * uvScale, xa * uvScale, zb * uvScale, xb * uvScale, zb * uvScale, xa * uvScale, za * uvScale, xb * uvScale, zb * uvScale, xb * uvScale, za * uvScale);
+        }
+      }
+      var g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      return g;
+    }
+    var kerb = new THREE.Mesh(strips(ROUTE_G, 1.0, 0.012, 1, false), std({ color: C(0x08090c), roughness: 1 }));
+    kerb.receiveShadow = true; scene.add(kerb);
+    var road = new THREE.Mesh(strips(ROUTE_G, 0.84, 0.024, 0.5, false), std({ map: roadTex, roughness: 0.9, metalness: 0.05 }));
+    road.receiveShadow = true; scene.add(road);
+    var lane = new THREE.Mesh(strips(ROUTE_A, 0.36, 0.04, 0.8, true), additive({ map: dashTex, color: new THREE.Color(0.05, 0.62, 1.0), opacity: 0.6 }));
+    lane.renderOrder = 2; scene.add(lane);
+    var laneHi = new THREE.Mesh(strips(ROUTE_A, 0.08, 0.8, 0.8, true), additive({ map: dashTex, color: new THREE.Color(0.05, 0.62, 1.0), opacity: 0.2 }));
+    laneHi.renderOrder = 2; scene.add(laneHi);
+
+    // build pads
+    var padGeo = merge([part(cyl(0.46, 0.52, 0.16, 8), 0x59616e, 0, 0.08, 0), part(cyl(0.36, 0.36, 0.02, 8), 0x778191, 0, 0.165, 0)]);
+    var pads = new THREE.InstancedMesh(padGeo, std({ vertexColors: true, roughness: 0.85, flatShading: true }), 16);
+    for (var i = 0; i < 16; i++) { _m4.makeTranslation(SLOT_TILES[i][0] + 0.5, 0, SLOT_TILES[i][1] + 0.5); pads.setMatrixAt(i, _m4); }
+    pads.castShadow = true; pads.receiveShadow = true; scene.add(pads);
+
+    // rough terrain: rocks and scrub, seeded, kept off the road, pads and keep
+    function free(x, z, margin) {
+      var k, s;
+      for (k = 0; k < ROUTE_G.segs.length; k++) {
+        s = ROUTE_G.segs[k];
+        var px = Math.max(Math.min(s.ax, s.bx), Math.min(Math.max(s.ax, s.bx), x)), pz = Math.max(Math.min(s.az, s.bz), Math.min(Math.max(s.az, s.bz), z));
+        if (Math.abs(px - x) < 0.5 + margin && Math.abs(pz - z) < 0.5 + margin) return false;
+      }
+      for (k = 0; k < 16; k++) if (Math.abs(SLOT_TILES[k][0] + 0.5 - x) < 0.6 + margin && Math.abs(SLOT_TILES[k][1] + 0.5 - z) < 0.6 + margin) return false;
+      return Math.abs(x - KEEP_X) > 1.3 + margin || Math.abs(z - KEEP_Z) > 1.3 + margin;
+    }
+    var rockGeo = new THREE.DodecahedronGeometry(1, 0), rocks = new THREE.InstancedMesh(rockGeo, std({ color: 0xffffff, roughness: 0.95, flatShading: true }), 150);
+    var scrubGeo = new THREE.ConeGeometry(1, 1.4, 5), scrub = new THREE.InstancedMesh(scrubGeo, std({ color: 0xffffff, roughness: 1, flatShading: true }), 150);
+    var nr = 0, ns = 0, guard = 0;
+    while ((nr < 150 || ns < 150) && guard++ < 4000) {
+      var x = -0.8 + tr() * 25.6, z = -0.8 + tr() * 15.6, r = tr();
+      if (!free(x, z, 0.12)) continue;
+      if (nr < 150 && r < 0.5) {
+        var sc = 0.07 + tr() * tr() * 0.26;
+        _m4.compose(_p.set(x, sc * 0.4, z), _q.setFromEuler(_e.set(tr() * 3, tr() * 3, tr() * 3)), _s.set(sc * (0.8 + tr() * 0.6), sc * (0.6 + tr() * 0.5), sc));
+        rocks.setMatrixAt(nr, _m4);
+        var gv = 0.22 + tr() * 0.2; rocks.setColorAt(nr, _col.setRGB(gv * 1.05, gv, gv * 0.92).convertSRGBToLinear()); nr++;
+      } else if (ns < 150) {
+        var sh = 0.07 + tr() * 0.13;
+        _m4.compose(_p.set(x, sh * 0.7, z), _q.setFromEuler(_e.set(0, tr() * 6, 0)), _s.set(sh, sh, sh));
+        scrub.setMatrixAt(ns, _m4);
+        scrub.setColorAt(ns, _col.setRGB(0.16 + tr() * 0.1, 0.26 + tr() * 0.14, 0.13 + tr() * 0.06).convertSRGBToLinear()); ns++;
+      }
+    }
+    rocks.count = nr; scrub.count = ns;
+    rocks.castShadow = scrub.castShadow = true; rocks.receiveShadow = scrub.receiveShadow = true;
+    scene.add(rocks); scene.add(scrub);
+  })();
+
+  // ------------------------------------------------------------------ the keep (blocks can be knocked off)
+  var keep = (function () {
+    var defs = [], x, z, k, i;
+    function blk(px, py, pz, sx, sy, sz, tier, shade) { defs.push({ x: px, y: py, z: pz, sx: sx, sy: sy, sz: sz, tier: tier, shade: shade }); }
+    var cs = [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]];
+    for (i = 0; i < 4; i++) {                                  // corner towers
+      x = cs[i][0]; z = cs[i][1];
+      blk(x, 0.16, z, 0.36, 0.32, 0.36, 3, 0.92); blk(x, 0.47, z, 0.34, 0.30, 0.34, 2, 1.0); blk(x, 0.76, z, 0.32, 0.28, 0.32, 1, 0.95);
+      blk(x, 0.97, z, 0.2, 0.14, 0.2, 0, 1.08);
+    }
+    var sides = [[0, -0.6, 1], [0, 0.6, 1], [-0.6, 0, 0], [0.6, 0, 0]];
+    for (i = 0; i < 4; i++) {                                  // curtain walls, two courses, with a gate gap on the road side (west)
+      for (k = -1; k <= 1; k += 2) {
+        var along = k * 0.21, west = sides[i][0] < 0;
+        x = sides[i][0] + (sides[i][2] ? along : 0); z = sides[i][1] + (sides[i][2] ? 0 : along);
+        var sx = sides[i][2] ? 0.4 : 0.18, sz = sides[i][2] ? 0.18 : 0.4;
+        if (!west) blk(x, 0.13, z, sx, 0.26, sz, 2, 0.86);
+        blk(x, 0.40, z, sx, 0.26, sz, 1, 0.97);
+      }
+    }
+    blk(0, 0.17, 0, 0.56, 0.34, 0.56, 4, 0.9); blk(0, 0.50, 0, 0.5, 0.32, 0.5, 3, 1.0); blk(0, 0.81, 0, 0.46, 0.3, 0.46, 2, 0.94);
+    blk(0, 1.10, 0, 0.42, 0.28, 0.42, 1, 1.02); blk(0, 1.33, 0, 0.26, 0.18, 0.26, 0, 1.1);
+    // knock order: top pieces first, seeded within a tier
+    var order = defs.map(function (d, idx) { return idx; });
+    order.sort(function (a, b) { return defs[a].tier - defs[b].tier || vr(a * 17 + 5) - vr(b * 17 + 5); });
+    var rank = []; for (i = 0; i < order.length; i++) rank[order[i]] = i;
+    var mesh = instanced(BOX, std({ color: 0xffffff, roughness: 0.9, flatShading: true }), defs.length, true);
+    mesh.receiveShadow = true; mesh.count = defs.length;
+    // when is block i knocked off?  leaks knock `lostAt(hp)` blocks in total; the fall takes the rest
+    var N = defs.length;
+    function lostAt(hpLeft) { return Math.min(N - 6, Math.round((10 - hpLeft) * (N - 6) / 10)); }
+    var knock = new Float32Array(N), byFall = new Uint8Array(N), prev = 0;
+    for (i = 0; i < N; i++) { knock[i] = T_FALL; byFall[i] = 1; }
+    for (i = 0; i < rep.leaks.length; i++) {
+      var upto = Math.max(prev + 1, lostAt(rep.leaks[i].hp));
+      if (rep.leaks[i].hp <= 0) break;
+      upto = Math.min(upto, N - 4);
+      for (k = prev; k < upto; k++) { knock[order[k]] = rep.leaks[i].tick / TPS; byFall[order[k]] = 0; }
+      prev = Math.max(prev, upto);
+    }
+    var flag = new THREE.Mesh(merge([part(cyl(0.018, 0.018, 0.5, 5), 0x2b2b30, 0, 1.66, 0), part(box(0.26, 0.15, 0.02), 0xd9a441, 0.14, 1.82, 0)]),
+      std({ vertexColors: true, roughness: 0.8 }));
+    flag.position.set(KEEP_X, 0, KEEP_Z); flag.castShadow = true; scene.add(flag);
+    var floor = new THREE.Mesh(cyl(1.02, 1.08, 0.06, 8), std({ color: C(0x55565e), roughness: 0.95, flatShading: true }));
+    floor.position.set(KEEP_X, 0.03, KEEP_Z); floor.rotation.y = Math.PI / 8; floor.receiveShadow = true; scene.add(floor);
+    var stone = C(0xb9ad98), red = C(0xff3b24);
+    function update(t) {
+      // red flash for 0.3 s after every leak
+      var flash = 0, i;
+      for (i = rep.leaks.length - 1; i >= 0; i--) {
+        var age = t - rep.leaks[i].tick / TPS;
+        if (age < 0) continue;
+        if (age < 0.3) flash = Math.max(flash, 1 - age / 0.3);
+        break;
+      }
+      for (i = 0; i < N; i++) {
+        var d = defs[i], age2 = t - knock[i];
+        var px = KEEP_X + d.x, py = d.y, pz = KEEP_Z + d.z, sc = 1;
+        _q.set(0, 0, 0, 1);
+        if (age2 >= 0) {
+          var burst = byFall[i] ? 1.9 : 1.0, r1 = vr(i * 7 + 1), r2 = vr(i * 7 + 2), r3 = vr(i * 7 + 3);
+          var len = Math.sqrt(d.x * d.x + d.z * d.z) + 0.001, ang = Math.atan2(d.z, d.x) + (r1 - 0.5) * 1.6;
+          var sp = (0.9 + r2 * 1.5) * burst, vx = Math.cos(ang) * sp * (len > 0.1 ? 1 : 0.7), vz = Math.sin(ang) * sp, vy = (2.2 + r3 * 2.2) * (byFall[i] ? 1.3 : 1);
+          var g = 9, rest = d.sy * 0.3, tl = (vy + Math.sqrt(vy * vy + 2 * g * Math.max(0, d.y - rest))) / g, a = Math.min(age2, tl);
+          px += vx * a; pz += vz * a; py = Math.max(rest, d.y + vy * a - 0.5 * g * a * a);
+          _q.setFromEuler(_e.set(a * (3 + r1 * 5), a * (2 + r2 * 4), a * (3 + r3 * 5)));
+          sc = 0.8;
+        }
+        _m4.compose(_p.set(px, py, pz), _q, _s.set(d.sx * sc, d.sy * sc, d.sz * sc));
+        mesh.setMatrixAt(i, _m4);
+        _col.copy(stone).multiplyScalar(d.shade);
+        if (flash > 0 && age2 < 0) _col.lerp(red, flash * 0.85);
+        mesh.setColorAt(i, _col);
+      }
+      mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true;
+      flag.visible = t < T_FALL;
+    }
+    return { update: update };
+  })();
+
+  // ------------------------------------------------------------------ enemies (instanced, one mesh per type)
+  var ENEMY_COL = [C(0x86a070), C(0xf6cb3c), C(0x66f2ff), C(0xff7a1a), C(0x9b4fe0), C(0xf4f4ee), C(0xb87cf0)];
+  var ENEMY_H = [0.72, 0.5, 1.25, 0.98, 0.72, 0.98, 0.42];           // where the health bar sits
+  var ENEMY_CAP = 640;
+  var enemyMesh = (function () {
+    var lit = std({ vertexColors: true, roughness: 0.62, metalness: 0.12, flatShading: true });
+    var glow = basic({ vertexColors: true });
+    var geos = [
+      merge([part(box(0.34, 0.16, 0.36), 0x47583c, 0, 0.08, 0), part(box(0.38, 0.30, 0.44), 0x7f9c68, 0, 0.31, 0), part(sph(0.15, 8, 6), 0x9db884, 0.03, 0.57, 0),
+        part(box(0.07, 0.07, 0.24), 0x2c3325, 0.14, 0.58, 0)]),
+      merge([part(new THREE.ConeGeometry(0.17, 0.72, 6), 0xf6cb3c, 0.04, 0.24, 0, 0, 0, -Math.PI / 2), part(box(0.2, 0.03, 0.5), 0xc89312, -0.2, 0.24, 0),
+        part(box(0.2, 0.26, 0.03), 0xc89312, -0.22, 0.3, 0)]),
+      merge([part(new THREE.OctahedronGeometry(0.24, 0), 0x66f2ff, 0, 0, 0, 0, 0, 0, 1, 1.35, 1), part(new THREE.OctahedronGeometry(0.12, 0), 0xe8feff, 0, 0, 0, 0, 0.6, 0, 1, 1.5, 1),
+        part(new THREE.TorusGeometry(0.33, 0.04, 5, 14), 0x35c9e8, 0, 0, 0, Math.PI / 2, 0, 0)]),
+      merge([part(box(0.6, 0.14, 0.6), 0x22252b, 0, 0.07, 0), part(box(0.68, 0.48, 0.64), 0x3b3f48, 0, 0.38, 0), part(box(0.26, 0.22, 0.28), 0x2a2d34, 0.14, 0.73, 0),
+        part(box(0.36, 0.13, 0.24), 0xff7a1a, -0.02, 0.69, 0.3), part(box(0.36, 0.13, 0.24), 0xff7a1a, -0.02, 0.69, -0.3), part(box(0.07, 0.34, 0.5), 0xff7a1a, 0.36, 0.4, 0)]),
+      merge([part(sph(0.2, 8, 6), 0x9b4fe0, 0.19, 0.22, 0), part(sph(0.2, 8, 6), 0x9b4fe0, -0.1, 0.22, 0.17), part(sph(0.2, 8, 6), 0x9b4fe0, -0.1, 0.22, -0.17),
+        part(sph(0.16, 8, 6), 0xc890fa, 0, 0.47, 0)]),
+      merge([part(new THREE.ConeGeometry(0.23, 0.56, 8), 0xf4f4ee, 0, 0.28, 0), part(sph(0.13, 8, 6), 0xffffff, 0, 0.64, 0),
+        part(box(0.05, 0.3, 0.05), 0x58e06a, 0.2, 0.62, 0), part(box(0.2, 0.05, 0.05), 0x58e06a, 0.2, 0.67, 0), part(sph(0.07, 6, 5), 0x8dffa0, 0.2, 0.84, 0)]),
+      merge([part(new THREE.IcosahedronGeometry(0.15, 0), 0xb87cf0, 0, 0.16, 0), part(new THREE.ConeGeometry(0.06, 0.16, 4), 0xdcc0ff, 0, 0.36, 0)])
+    ];
+    var out = [];
+    for (var i = 0; i < 7; i++) out.push(instanced(geos[i], i === 2 ? glow : lit, ENEMY_CAP, true));
+    return out;
+  })();
+  var quadGeo = new THREE.PlaneGeometry(1, 1);
+  var flatGeo = new THREE.PlaneGeometry(1, 1); flatGeo.rotateX(-Math.PI / 2);
+  var barBack = instanced(quadGeo, basic({ color: 0xffffff, toneMapped: false, depthWrite: false, depthTest: false }), 1024, false); barBack.renderOrder = 5;
+  var barFill = instanced(quadGeo, basic({ color: 0xffffff, toneMapped: false, depthWrite: false, depthTest: false }), 1024, false); barFill.renderOrder = 6;
+  var blobs = instanced(flatGeo, basic({ map: glowTex, color: 0x000000, transparent: true, opacity: 0.5, depthWrite: false }), 512, false); blobs.renderOrder = 1;
+  var marks = instanced(flatGeo, additive({ map: glowTex, color: 0xffffff }), 1024, false); marks.renderOrder = 3;
+
+  // ------------------------------------------------------------------ effect pools (all instanced)
+  var beams = instanced(BOX, additive({ color: 0xffffff }), 512, false); beams.renderOrder = 8;
+  var ringGeo = new THREE.RingGeometry(0.84, 1, 48); ringGeo.rotateX(-Math.PI / 2);
+  var rings = instanced(ringGeo, additive({ color: 0xffffff, side: THREE.DoubleSide }), 256, false); rings.renderOrder = 8;
+  var glows = instanced(quadGeo, additive({ map: glowTex, color: 0xffffff }), 1024, false); glows.renderOrder = 9;
+  var debris = instanced(BOX, std({ color: 0xffffff, roughness: 0.8, flatShading: true }), 1536, true);
+  var shells = instanced(sph(0.07, 6, 5), std({ color: C(0x2a2018), roughness: 0.5, metalness: 0.6 }), 64, true);
+  var Z_AXIS = new THREE.Vector3(0, 0, 1), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _d = new THREE.Vector3();
+  function addBeam(ax, ay, az, bx, by, bz, th, col, k) {
+    var n = beams.count; if (n >= 512) return;
+    _a.set(ax, ay, az); _b.set(bx, by, bz); _d.subVectors(_b, _a);
+    var len = _d.length(); if (len < 1e-4) return;
+    _q.setFromUnitVectors(Z_AXIS, _d.multiplyScalar(1 / len));
+    _m4.compose(_p.addVectors(_a, _b).multiplyScalar(0.5), _q, _s.set(th, th, len));
+    beams.setMatrixAt(n, _m4); beams.setColorAt(n, _col.copy(col).multiplyScalar(k)); beams.count = n + 1;
+  }
+  function addRing(x, y, z, r, col, k) {
+    var n = rings.count; if (n >= 256) return;
+    _m4.compose(_p.set(x, y, z), _q.set(0, 0, 0, 1), _s.set(r, 1, r));
+    rings.setMatrixAt(n, _m4); rings.setColorAt(n, _col.copy(col).multiplyScalar(k)); rings.count = n + 1;
+  }
+  function addGlow(x, y, z, size, col, k) {
+    var n = glows.count; if (n >= 1024) return;
+    _m4.compose(_p.set(x, y, z), camera.quaternion, _s.set(size, size, size));
+    glows.setMatrixAt(n, _m4); glows.setColorAt(n, _col.copy(col).multiplyScalar(k)); glows.count = n + 1;
+  }
+  function addMark(x, z, size, col, k) {
+    var n = marks.count; if (n >= 1024) return;
+    _m4.compose(_p.set(x, 0.05, z), _q.set(0, 0, 0, 1), _s.set(size, 1, size));
+    marks.setMatrixAt(n, _m4); marks.setColorAt(n, _col.copy(col).multiplyScalar(k)); marks.count = n + 1;
+  }
+  // a ballistic chip: closed form in its age, comes to rest on the ground
+  function addChip(x0, y0, z0, seed, age, life, speed, size, col) {
+    var n = debris.count; if (n >= 1536 || age < 0 || age >= life) return;
+    var ang = vr(seed) * 6.2832, sp = (0.4 + vr(seed + 1)) * speed, vy = (1.6 + vr(seed + 2) * 2.2) * Math.min(1.6, 0.6 + speed * 0.4), g = 9;
+    var tl = (vy + Math.sqrt(vy * vy + 2 * g * Math.max(0, y0 - 0.04))) / g, a = Math.min(age, tl);
+    var fade = 1 - smooth((age - life * 0.6) / (life * 0.4)), sc = size * (0.6 + vr(seed + 3) * 0.8) * fade;
+    _q.setFromEuler(_e.set(a * (4 + vr(seed + 4) * 8), a * (3 + vr(seed + 5) * 6), a * 5));
+    _m4.compose(_p.set(x0 + Math.cos(ang) * sp * a, Math.max(0.04, y0 + vy * a - 0.5 * g * a * a), z0 + Math.sin(ang) * sp * a), _q, _s.set(sc, sc * 0.7, sc));
+    debris.setMatrixAt(n, _m4); debris.setColorAt(n, col); debris.count = n + 1;
+  }
+
+  // ------------------------------------------------------------------ turrets
+  var TUR_COL = [C(0x7fb2ff), C(0xe0a04a), C(0xdff4ff), C(0xff3d4f), C(0x2fe0cc)];
+  var TUR_MUZZLE = [0.52, 0.62, 0.86, 1.0, 0.72];
+  var turrets = (function () {
+    var lit = std({ vertexColors: true, roughness: 0.5, metalness: 0.3, flatShading: true });
+    var ice = std({ vertexColors: true, roughness: 0.25, metalness: 0.1, flatShading: true, emissive: C(0x4aa8e8), emissiveIntensity: 0.55 });
+    var up = -Math.PI / 2;
+    var baseGeo = [
+      merge([part(cyl(0.27, 0.33, 0.2, 8), 0x2f4a73, 0, 0.1, 0), part(cyl(0.12, 0.12, 0.12, 6), 0x3d5f92, 0, 0.26, 0)]),
+      merge([part(cyl(0.38, 0.42, 0.18, 10), 0x6e4a1c, 0, 0.09, 0)]),
+      merge([part(cyl(0.3, 0.38, 0.16, 6), 0x7f9fb8, 0, 0.08, 0), part(cyl(0.1, 0.16, 0.2, 6), 0xa9c6da, 0, 0.26, 0)]),
+      merge([part(cyl(0.2, 0.32, 0.3, 6), 0x6b1620, 0, 0.15, 0), part(cyl(0.09, 0.15, 0.5, 6), 0x8c1c28, 0, 0.55, 0)]),
+      merge([part(box(0.62, 0.18, 0.62), 0x0f5f58, 0, 0.09, 0)])
+    ];
+    var headGeo = [
+      merge([part(box(0.36, 0.2, 0.34), 0x5b8fd6, 0, 0.42, 0), part(cyl(0.04, 0.04, 0.46, 6), 0xb4d0f5, 0.34, 0.44, 0.09, 0, 0, up), part(cyl(0.04, 0.04, 0.46, 6), 0xb4d0f5, 0.34, 0.44, -0.09, 0, 0, up)]),
+      merge([part(sph(0.3, 10, 8), 0xc98f3c, 0, 0.26, 0, 0, 0, 0, 1, 0.82, 1), part(cyl(0.12, 0.15, 0.56, 8), 0x8a5c22, 0.34, 0.42, 0, 0, 0, up + 0.3), part(cyl(0.16, 0.16, 0.08, 8), 0xe8b45e, 0.58, 0.5, 0, 0, 0, up + 0.3)]),
+      merge([part(new THREE.OctahedronGeometry(0.25, 0), 0xeaf6ff, 0, 0.72, 0, 0, 0, 0, 1, 1.75, 1), part(new THREE.OctahedronGeometry(0.1, 0), 0xbfe6ff, 0.3, 0.5, 0, 0, 0, 0, 1, 1.6, 1),
+        part(new THREE.OctahedronGeometry(0.1, 0), 0xbfe6ff, -0.15, 0.5, 0.26, 0, 0, 0, 1, 1.6, 1), part(new THREE.OctahedronGeometry(0.1, 0), 0xbfe6ff, -0.15, 0.5, -0.26, 0, 0, 0, 1, 1.6, 1)]),
+      merge([part(box(1.05, 0.1, 0.13), 0xd92b3a, 0.16, 0.88, 0), part(box(0.3, 0.2, 0.24), 0x8c1c28, -0.2, 0.88, 0), part(box(0.12, 0.14, 0.17), 0xff8a94, 0.7, 0.88, 0)]),
+      merge([part(box(0.36, 0.2, 0.36), 0x1fbfae, 0, 0.28, 0), part(cyl(0.05, 0.05, 0.44, 6), 0x8af5e8, 0.18, 0.56, 0.1, 0, 0, up + 0.85), part(cyl(0.05, 0.05, 0.44, 6), 0x8af5e8, 0.18, 0.56, -0.1, 0, 0, up + 0.85),
+        part(cyl(0.05, 0.05, 0.44, 6), 0x8af5e8, 0.02, 0.56, 0.1, 0, 0, up + 0.85), part(cyl(0.05, 0.05, 0.44, 6), 0x8af5e8, 0.02, 0.56, -0.1, 0, 0, up + 0.85)])
+    ];
+    var pipGeo = sph(0.085, 8, 6), pipMat = basic({ color: C(0xfff3a6), toneMapped: false });
+    var slots = [];
+    for (var s = 0; s < 16; s++) {
+      var root = new THREE.Group();
+      root.position.set(SLOT_TILES[s][0] + 0.5, 0.17, SLOT_TILES[s][1] + 0.5);
+      var types = [];
+      for (var t = 0; t < 5; t++) {
+        var grp = new THREE.Group(), b = new THREE.Mesh(baseGeo[t], lit), h = new THREE.Mesh(headGeo[t], t === 2 ? ice : lit);
+        b.castShadow = h.castShadow = true; b.receiveShadow = h.receiveShadow = true;
+        grp.add(b); grp.add(h); grp.visible = false; root.add(grp);
+        types.push({ grp: grp, head: h });
+      }
+      var pips = [];
+      for (var k = 0; k < 3; k++) { var pm = new THREE.Mesh(pipGeo, pipMat); pm.visible = false; root.add(pm); pips.push(pm); }
+      scene.add(root);
+      slots.push({ root: root, types: types, pips: pips });
+    }
+    function spanAt(s, k) { var sp = rep.spans[s], i = sp.length - 1; while (i > 0 && sp[i].tick > k) i--; return sp[i]; }
+    function lastShot(list, k) {      // index of the last shot with tick <= k, or -1
+      var lo = 0, hi = list.length - 1, r = -1;
+      while (lo <= hi) { var m = (lo + hi) >> 1; if (list[m].tick <= k) { r = m; lo = m + 1; } else hi = m - 1; }
+      return r;
+    }
+    function yawTo(s, sh) { return Math.atan2(-(sh.z - (SLOT_TILES[s][1] + 0.5)), sh.x - (SLOT_TILES[s][0] + 0.5)); }
+    function update(k, tEff) {
+      for (var s = 0; s < 16; s++) {
+        var sl = slots[s], sp = spanAt(s, k), t;
+        for (t = 0; t < 5; t++) sl.types[t].grp.visible = t === sp.type;
+        for (t = 0; t < 3; t++) sl.pips[t].visible = false;
+        if (sp.type < 0) continue;
+        var cur = sl.types[sp.type], ageB = tEff - sp.built / TPS, pop = ageB < 0.35 ? 0.25 + 0.75 * smooth(ageB / 0.35) + 0.25 * Math.sin(Math.min(1, ageB / 0.35) * Math.PI) : 1;
+        cur.grp.scale.set(pop, pop, pop);
+        // aim: ease from the previous target to the latest one over 0.1 s, with a short recoil
+        var list = rep.slotShots[s], i = lastShot(list, k), yaw = s % 2 ? -0.6 : 0.9, kick = 0;
+        if (i >= 0) {
+          var a1 = yawTo(s, list[i]), ageS = tEff - list[i].tick / TPS;
+          yaw = a1;
+          if (i > 0 && ageS < 0.1) {
+            var a0 = yawTo(s, list[i - 1]), dA = a1 - a0;
+            while (dA > Math.PI) dA -= 2 * Math.PI; while (dA < -Math.PI) dA += 2 * Math.PI;
+            yaw = a0 + dA * smooth(ageS / 0.1);
+          }
+          if (ageS >= 0 && ageS < 0.14) kick = 1 - ageS / 0.14;
+        }
+        if (sp.type === 2) { cur.head.rotation.y = tEff * 1.3 + s; cur.head.position.set(0, 0.05 * Math.sin(tEff * 2.2 + s) + kick * 0.06, 0); }
+        else { cur.head.rotation.y = yaw; cur.head.position.set(-Math.cos(yaw) * kick * 0.09, 0, Math.sin(yaw) * kick * 0.09); }
+        // tier pips on the pad rim, facing the camera
+        var ageU = tEff - sp.tick / TPS, bump = sp.kind === 1 && ageU < 0.4 ? 1 + 1.2 * (1 - ageU / 0.4) : 1;
+        for (t = 0; t < sp.tier; t++) {
+          var pp = sl.pips[t];
+          pp.visible = true;
+          pp.position.set((t - (sp.tier - 1) / 2) * 0.24, 0.03, 0.46);
+          pp.scale.setScalar(bump * pop);
+        }
+      }
+    }
+    return { update: update, spanAt: spanAt };
+  })();
+
+  // ------------------------------------------------------------------ HUD (drawn in the WebGL canvas, digits from a glyph atlas)
+  var hud = (function () {
+    var cv = makeCanvas(1024, 256), g = cv.getContext('2d'), i;
+    // row 0: digits 0-9 in 64x96 cells
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '700 84px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+    g.lineJoin = 'round';
+    for (i = 0; i < 10; i++) {
+      g.lineWidth = 9; g.strokeStyle = 'rgba(8,10,16,0.85)'; g.strokeText(String(i), i * 64 + 32, 52);
+      g.fillStyle = '#ffffff'; g.fillText(String(i), i * 64 + 32, 52);
+    }
+    // row 1: icons in 96x96 cells at y = 112
+    function cell(n) { g.setTransform(1, 0, 0, 1, n * 96 + 48, 112 + 48); }
+    function outline(w) { g.lineWidth = w; g.strokeStyle = 'rgba(8,10,16,0.9)'; g.stroke(); }
+    cell(0);                                                       // wave glyph: a banner on a pole
+    g.beginPath(); g.moveTo(-22, -34); g.lineTo(30, -24); g.lineTo(14, -10); g.lineTo(30, 6); g.lineTo(-22, 10); g.closePath(); outline(8); g.fillStyle = '#ffffff'; g.fill();
+    g.beginPath(); g.rect(-30, -40, 8, 80); outline(8); g.fillStyle = '#d8dbe6'; g.fill();
+    cell(1);                                                       // coin
+    g.beginPath(); g.arc(0, 0, 34, 0, 6.2832); outline(8); g.fillStyle = '#f2b632'; g.fill();
+    g.beginPath(); g.arc(0, 0, 22, 0, 6.2832); g.lineWidth = 6; g.strokeStyle = '#a86f0a'; g.stroke();
+    g.beginPath(); g.rect(-4, -12, 8, 24); g.fillStyle = '#a86f0a'; g.fill();
+    cell(2);                                                       // HP pip (white, tinted per vertex)
+    g.beginPath(); g.moveTo(0, -36); g.lineTo(30, -22); g.lineTo(30, 8); g.quadraticCurveTo(26, 30, 0, 40); g.quadraticCurveTo(-26, 30, -30, 8); g.lineTo(-30, -22); g.closePath();
+    outline(8); g.fillStyle = '#ffffff'; g.fill();
+    cell(3);                                                       // grunt
+    g.beginPath(); g.rect(-24, -8, 48, 40); outline(8); g.fillStyle = '#8fa076'; g.fill();
+    g.beginPath(); g.arc(0, -20, 18, 0, 6.2832); outline(8); g.fillStyle = '#a9b98c'; g.fill();
+    cell(4);                                                       // runner
+    g.beginPath(); g.moveTo(38, 0); g.lineTo(-30, -26); g.lineTo(-14, 0); g.lineTo(-30, 26); g.closePath(); outline(8); g.fillStyle = '#f6cb3c'; g.fill();
+    cell(5);                                                       // wisp
+    g.beginPath(); g.arc(0, 0, 40, 0, 6.2832); g.fillStyle = 'rgba(102,242,255,0.28)'; g.fill();
+    g.beginPath(); g.moveTo(0, -34); g.lineTo(24, 0); g.lineTo(0, 34); g.lineTo(-24, 0); g.closePath(); outline(6); g.fillStyle = '#66f2ff'; g.fill();
+    cell(6);                                                       // brute
+    g.beginPath(); g.rect(-34, -26, 68, 58); outline(8); g.fillStyle = '#3b3f48'; g.fill();
+    g.beginPath(); g.rect(-34, -34, 68, 16); g.fillStyle = '#ff7a1a'; g.fill();
+    g.beginPath(); g.rect(-8, -6, 16, 30); g.fillStyle = '#ff7a1a'; g.fill();
+    cell(7);                                                       // splitter
+    g.beginPath(); g.arc(-17, 12, 20, 0, 6.2832); g.arc(17, 12, 20, 0, 6.2832); g.arc(0, -16, 20, 0, 6.2832); outline(8); g.fillStyle = '#9b4fe0'; g.fill();
+    cell(8);                                                       // mender
+    g.beginPath(); g.arc(0, 0, 40, 0, 6.2832); g.fillStyle = 'rgba(88,224,106,0.38)'; g.fill();
+    g.beginPath(); g.arc(0, 0, 26, 0, 6.2832); outline(6); g.fillStyle = '#f4f4ee'; g.fill();
+    g.beginPath(); g.rect(-5, -16, 10, 32); g.rect(-16, -5, 32, 10); g.fillStyle = '#35b84a'; g.fill();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = '#ffffff'; g.fillRect(960, 200, 48, 48);         // solid cell
+    var tex = new THREE.CanvasTexture(cv);
+    tex.encoding = THREE.sRGBEncoding;
+    tex.anisotropy = 4;
+    var MAXQ = 320, pos = new Float32Array(MAXQ * 12), uv = new Float32Array(MAXQ * 8), col = new Float32Array(MAXQ * 12), idx = new Uint16Array(MAXQ * 6);
+    for (i = 0; i < MAXQ; i++) idx.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3], i * 6);
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setIndex(new THREE.BufferAttribute(idx, 1));
+    var mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, vertexColors: true, transparent: true, depthTest: false, depthWrite: false, toneMapped: false }));
+    mesh.frustumCulled = false;
+    hudScene.add(mesh);
+    var nq = 0;
+    // quad in top-left pixel coordinates; (u,v,w,h) in atlas pixels
+    function quad(x, y, w, h, au, av, aw, ah, r, gg, b) {
+      if (nq >= MAXQ) return;
+      var o = nq * 12, y0 = VH - y, y1 = VH - (y + h);
+      pos[o] = x; pos[o + 1] = y0; pos[o + 3] = x; pos[o + 4] = y1; pos[o + 6] = x + w; pos[o + 7] = y1; pos[o + 9] = x + w; pos[o + 10] = y0;
+      var u0 = au / 1024, u1 = (au + aw) / 1024, v0 = 1 - av / 256, v1 = 1 - (av + ah) / 256, q = nq * 8;
+      uv[q] = u0; uv[q + 1] = v0; uv[q + 2] = u0; uv[q + 3] = v1; uv[q + 4] = u1; uv[q + 5] = v1; uv[q + 6] = u1; uv[q + 7] = v0;
+      for (var k = 0; k < 4; k++) { col[o + k * 3] = r; col[o + k * 3 + 1] = gg; col[o + k * 3 + 2] = b; }
+      nq++;
+    }
+    function icon(n, x, y, size, r, gg, b) { quad(x, y, size, size, n * 96, 112, 96, 96, r, gg, b); }
+    // digits with cell height h; returns the x after the last digit
+    function number(v, x, y, h, r, gg, b) {
+      var s = String(Math.max(0, Math.floor(v))), w = h * 64 / 96, adv = w * 0.8;
+      for (var k = 0; k < s.length; k++) { quad(x + k * adv - (w - adv) / 2, y, w, h, (s.charCodeAt(k) - 48) * 64, 0, 64, 96, r, gg, b); }
+      return x + s.length * adv;
+    }
+    var PREVIEW_ICON = [3, 4, 5, 6, 7, 8];
+    function update(t, k) {
+      nq = 0;
+      var u = VH / 650, m = 14 * u, x, y, i;
+      // wave number (large) with its banner glyph, with a short bump at each wave start
+      var w = rep.wave[k], wh = 0.125 * VH, bump = 1;
+      for (i = rep.waveStarts.length - 1; i >= 0; i--) { var aw = t - rep.waveStarts[i].tick / TPS; if (aw >= 0) { if (aw < 0.3 && t < T_FALL + 0.3) bump = 1 + 0.16 * (1 - aw / 0.3); break; } }
+      var ih = wh * 0.74;
+      icon(0, m, m + (wh - ih) / 2, ih, 1, 0.62, 0.14);
+      number(w, m + ih + 6 * u, m - (bump - 1) * wh / 2, wh * bump, 1, 1, 1);
+      // gold
+      y = m + wh + 2 * u; var gh = 0.058 * VH, ch = gh * 0.82;
+      icon(1, m + 2 * u, y + (gh - ch) / 2, ch, 1, 1, 1);
+      number(rep.gold[k], m + ch + 8 * u, y, gh, 1, 0.78, 0.26);
+      // next wave preview: icon + count per enemy type present
+      y += gh + 4 * u; var ph = 0.04 * VH, nx = rep.nextByWave[w] || [0, 0, 0, 0, 0, 0];
+      x = m + 2 * u;
+      for (i = 0; i < 6; i++) {
+        if (!nx[i]) continue;
+        icon(PREVIEW_ICON[i], x, y, ph, 1, 1, 1);
+        x = number(nx[i], x + ph + 1 * u, y, ph, 0.92, 0.94, 1) + 5 * u;
+      }
+      // base HP: 10 pips, top right; lost pips flash, then go dark
+      var hpNow = rep.hp[k], ps = 0.05 * VH, gap = 0.006 * VH, px0 = VW - m - 10 * ps - 9 * gap, lastHp = 10;
+      var flashFrom = -1, flashTo = -1, flashAge = 1;
+      for (i = 0; i < rep.leaks.length; i++) {
+        var al = t - rep.leaks[i].tick / TPS;
+        if (al < 0) break;
+        if (al < 0.4) { if (flashFrom < 0 || rep.leaks[i].hp < flashFrom) flashFrom = rep.leaks[i].hp; if (lastHp > flashTo) flashTo = lastHp; flashAge = Math.min(flashAge, al / 0.4); }
+        lastHp = rep.leaks[i].hp;
+      }
+      for (i = 0; i < 10; i++) {
+        var lit = i < hpNow, fl = !lit && i >= flashFrom && i < flashTo && flashFrom >= 0, sc = fl ? 1 + 0.5 * (1 - flashAge) : 1;
+        var qx = px0 + i * (ps + gap) - (sc - 1) * ps / 2, qy = m - (sc - 1) * ps / 2;
+        if (lit) icon(2, qx, qy, ps * sc, 0.07, 0.78, 0.16);
+        else if (fl) icon(2, qx, qy, ps * sc, 1, 0.08 + 0.92 * (1 - flashAge), 0.05 + 0.95 * (1 - flashAge));
+        else icon(2, qx, qy, ps * sc, 0.045, 0.045, 0.06);
+      }
+      geo.attributes.position.needsUpdate = true; geo.attributes.uv.needsUpdate = true; geo.attributes.color.needsUpdate = true;
+      geo.setDrawRange(0, nq * 6);
+    }
+    return { update: update };
+  })();
+
+  // ------------------------------------------------------------------ frame: everything is a function of simTime
+  var _rp = { x: 0, z: 0 }, _rq = { x: 0, z: 0 }, FROST = C(0x8fd0ff), WHITE = new THREE.Color(1, 1, 1);
+  var HP_GOOD = C(0x58e06a), HP_MID = C(0xf6cb3c), HP_BAD = C(0xff4a3a), BAR_BACK = new THREE.Color(0.02, 0.02, 0.03);
+  var COL_CANNON = C(0xffb45a), COL_FLAK = C(0x3ff0d8), COL_HEAL = C(0x49f06a), COL_SPLIT = C(0xb060ff), COL_GOLD = C(0xffd866), COL_RUBBLE = C(0x8a8a90), COL_SHOCK = C(0xffc890), COL_RED = C(0xff3020), COL_RUBBLE2 = C(0xb9ad98);
+  var counts = [0, 0, 0, 0, 0, 0, 0];
+
+  function traumaAt(t) {
+    var tr = 0, last = 0, b = rep.bumps, i;
+    for (i = 0; i < b.length && b[i].t <= t; i++) { tr = Math.max(0, tr - (b[i].t - last)); tr = Math.min(1, tr + b[i].add); last = b[i].t; }
+    return Math.max(0, tr - (t - last));
+  }
+
+  function renderAt(t) {
+    var kf = t * TPS, k = Math.floor(kf), f = kf - k, i, j, n;
+    if (k >= TOTAL_TICKS - 1) { k = TOTAL_TICKS - 1; f = 0; }
+    var frozen = t >= T_FALL, tEff = frozen ? T_FALL : t;        // game time stops at the fall
+    if (frozen) { k = rep.fall.tick; f = 0; }
+    var kE = Math.floor(tEff * TPS + 1e-6);
+
+    // --- enemies: tick k state eased toward tick k+1
+    var A = rep.snaps[k], B = rep.snaps[Math.min(k + 1, TOTAL_TICKS - 1)], gone = rep.gone[k + 1];
+    for (i = 0; i < 7; i++) counts[i] = 0;
+    var nb = 0, nblob = 0;
+    marks.count = 0; beams.count = 0; rings.count = 0; glows.count = 0; debris.count = 0; shells.count = 0;
+    j = 0;
+    for (i = 0, n = A.n; i < n; i++) {
+      var id = A.id[i], ty = A.ty[i], p0 = A.pr[i], p1 = p0, h0 = A.hp[i], h1 = h0, dying = false;
+      while (j < B.n && B.id[j] < id) j++;
+      if (f > 0) {
+        if (j < B.n && B.id[j] === id) { p1 = B.pr[j]; h1 = B.hp[j]; }
+        else if (gone && gone[id] !== undefined) { p1 = gone[id]; dying = true; }
+      }
+      var c = counts[ty];
+      if (c >= ENEMY_CAP) continue;
+      var route = ty === 2 ? ROUTE_A : ROUTE_G, p = p0 + (p1 - p0) * f, hp = h0 + (h1 - h0) * f;
+      routePoint(route, p, _rp);
+      routePoint(route, p - 28, _rq); var bx = _rq.x, bz = _rq.z;
+      routePoint(route, p + 28, _rq);
+      var hx = _rq.x - bx, hz = _rq.z - bz, hl = Math.sqrt(hx * hx + hz * hz) || 1;
+      hx /= hl; hz /= hl;
+      // seeded sideways offset so stacked enemies read as a group; splitlings fan out from where the splitter died
+      var age = t - rep.spawnTick[id] / TPS, lat = (vr(id * 3 + 1) - 0.5) * (ty === 3 ? 0.14 : ty === 2 ? 0.3 : 0.34), fwd = (vr(id * 3 + 2) - 0.5) * 0.16, hop = 0, sc = 1;
+      if (rep.isChild[id]) { var sa = smooth(age / 0.3); lat = ((id % 3) - 1) * 0.24 * sa; fwd = (vr(id) - 0.5) * 0.3 * sa; hop = 0.35 * Math.sin(Math.min(1, age / 0.3) * Math.PI); }
+      else if (age < 0.2) sc = 0.3 + 0.7 * age / 0.2;
+      var x = _rp.x + hx * fwd - hz * lat, z = _rp.z + hz * fwd + hx * lat;
+      var y = ty === 2 ? 0.8 + 0.07 * Math.sin(tEff * 3.1 + id * 1.7) : hop;
+      _q.setFromAxisAngle(_p.set(0, 1, 0), Math.atan2(-hz, hx));
+      if (ty === 2) { _e.set(0, tEff * 2.4 + id, 0); _q.setFromEuler(_e); }
+      _m4.compose(_p.set(x, y, z), _q, _s.set(sc, sc, sc));
+      enemyMesh[ty].setMatrixAt(c, _m4);
+      var slowed = A.sl[i] === 1;
+      enemyMesh[ty].setColorAt(c, slowed ? (ty === 2 ? _col.setRGB(0.75, 0.85, 1.25) : _col.setRGB(0.5, 0.85, 1.9)) : WHITE);
+      counts[ty] = c + 1;
+      if (slowed) addMark(x, z, 0.95, FROST, 0.55);
+      if (ty === 5) addMark(x, z, 1.5, COL_HEAL, 0.38);
+      if (ty === 2) {
+        addGlow(x, y, z, 1.15, ENEMY_COL[2], 0.5);
+        if (nblob < 512) { _m4.compose(_p.set(x + 0.12, 0.045, z - 0.05), _q.set(0, 0, 0, 1), _s.set(0.62, 1, 0.62)); blobs.setMatrixAt(nblob++, _m4); }
+      }
+      // health bar
+      if (nb < 1024) {
+        var by = y + ENEMY_H[ty] + 0.1, bw = ty === 3 ? 0.52 : ty === 6 ? 0.26 : 0.38, hf = dying ? Math.max(0, hp * (1 - f)) : hp;
+        _m4.compose(_p.set(x, by, z), camera.quaternion, _s.set(bw + 0.04, 0.09, 1));
+        barBack.setMatrixAt(nb, _m4); barBack.setColorAt(nb, BAR_BACK);
+        _m4.compose(_p.set(x - (1 - hf) * bw / 2, by, z), camera.quaternion, _s.set(Math.max(0.001, bw * hf), 0.05, 1));
+        barFill.setMatrixAt(nb, _m4);
+        barFill.setColorAt(nb, hf > 0.5 ? _col.copy(HP_MID).lerp(HP_GOOD, (hf - 0.5) * 2) : _col.copy(HP_BAD).lerp(HP_MID, hf * 2));
+        nb++;
+      }
+    }
+    for (i = 0; i < 7; i++) { enemyMesh[i].count = counts[i]; enemyMesh[i].instanceMatrix.needsUpdate = true; enemyMesh[i].instanceColor.needsUpdate = true; }
+    barBack.count = barFill.count = nb; blobs.count = nblob;
+
+    // --- turrets
+    turrets.update(k, tEff);
+
+    // --- shots: each lasts at most 0.15 s
+    var e, age2, u, sx, sz, sy, ty2, col;
+    for (i = rep.shotIdx[Math.max(0, kE - 3)]; i < rep.shotIdx[kE + 1]; i++) {
+      e = rep.shots[i]; age2 = tEff - e.tick / TPS;
+      if (age2 < 0 || age2 >= 0.15) continue;
+      u = 1 - age2 / 0.15;
+      sx = SLOT_TILES[e.slot][0] + 0.5; sz = SLOT_TILES[e.slot][1] + 0.5; sy = TUR_MUZZLE[e.type]; ty2 = e.air ? 0.8 : 0.28; col = TUR_COL[e.type];
+      if (e.type === 0) { addBeam(sx, sy, sz, e.x, ty2, e.z, 0.045, col, u * 1.3); addGlow(e.x, ty2, e.z, 0.3, col, u); }
+      else if (e.type === 1) {
+        var fl = age2 / 0.05;
+        if (fl < 1 && shells.count < 64) {
+          _m4.makeTranslation(sx + (e.x - sx) * fl, sy + (ty2 - sy) * fl + 0.7 * Math.sin(fl * Math.PI), sz + (e.z - sz) * fl);
+          shells.setMatrixAt(shells.count++, _m4);
+        } else if (fl >= 1) {
+          var ru = (age2 - 0.05) / 0.1;
+          addRing(e.x, 0.07, e.z, 0.9 * (0.35 + 0.65 * smooth(ru)), COL_CANNON, 1.5 * (1 - ru * 0.8));
+          addGlow(e.x, 0.3, e.z, 1.3 * (1 - ru * 0.5), COL_CANNON, 0.9 * (1 - ru));
+        }
+        if (age2 < 0.06) addGlow(sx, sy, sz, 0.6, COL_CANNON, 1 - age2 / 0.06);
+      }
+      else if (e.type === 2) { addBeam(sx, sy, sz, e.x, ty2, e.z, 0.1, col, u * 0.8); addGlow(e.x, ty2, e.z, 0.7, FROST, u * 0.9); }
+      else if (e.type === 3) { addBeam(sx, sy, sz, e.x, ty2, e.z, 0.17, col, u * 1.6); addGlow(e.x, ty2, e.z, 1.2, col, u * 1.4); addGlow(sx, sy, sz, 0.9, col, u); }
+      else { addBeam(sx, sy, sz, e.x, ty2, e.z, 0.035, col, u); addRing(e.x, 0.8, e.z, 0.7 * (0.3 + 0.7 * smooth(age2 / 0.15)), COL_FLAK, 1.5 * u); addGlow(e.x, 0.8, e.z, 0.8, COL_FLAK, u * 0.8); }
+    }
+    // --- kills pop into debris; splitters burst
+    for (i = rep.killIdx[Math.max(0, kE - 14)]; i < rep.killIdx[kE + 1]; i++) {
+      e = rep.kills[i]; age2 = tEff - e.tick / TPS;
+      if (age2 < 0 || age2 >= 0.7) continue;
+      routePoint(e.type === 2 ? ROUTE_A : ROUTE_G, e.prog, _rp);
+      var ky = e.type === 2 ? 0.8 : 0.3, nk = e.type === 3 ? 7 : e.type === 6 ? 3 : 5;
+      for (j = 0; j < nk; j++) addChip(_rp.x, ky, _rp.z, e.id * 13 + j * 7, age2, 0.7, 1.5, e.type === 3 ? 0.16 : 0.11, ENEMY_COL[e.type]);
+      if (age2 < 0.14) addGlow(_rp.x, ky, _rp.z, 0.9, ENEMY_COL[e.type], 1 - age2 / 0.14);
+      if (e.type === 4 && age2 < 0.3) addRing(_rp.x, 0.08, _rp.z, 0.2 + 0.6 * smooth(age2 / 0.3), COL_SPLIT, 1.4 * (1 - age2 / 0.3));
+    }
+    // --- mender heal pulses (ring of the heal radius)
+    for (i = rep.healIdx[Math.max(0, kE - 9)]; i < rep.healIdx[kE + 1]; i++) {
+      e = rep.heals[i]; age2 = tEff - e.tick / TPS;
+      if (age2 < 0 || age2 >= 0.45) continue;
+      addRing(e.x, 0.06, e.z, 1.5 * (0.25 + 0.75 * smooth(age2 / 0.45)), COL_HEAL, 0.9 * (1 - age2 / 0.45));
+    }
+    // --- builds, upgrades, sells
+    for (i = rep.actIdx[Math.max(0, kE - 18)]; i < rep.actIdx[kE + 1]; i++) {
+      e = rep.acts[i]; age2 = tEff - e.tick / TPS;
+      if (age2 < 0 || age2 >= 0.85) continue;
+      sx = SLOT_TILES[e.slot][0] + 0.5; sz = SLOT_TILES[e.slot][1] + 0.5;
+      if (e.kind === 2) {
+        for (j = 0; j < 8; j++) addChip(sx, 0.5, sz, i * 31 + j * 5 + 900, age2, 0.85, 1.0, 0.15, j % 2 ? COL_RUBBLE : TUR_COL[e.type]);
+        if (age2 < 0.3) addGlow(sx, 0.4, sz, 1.4, COL_RUBBLE, 0.5 * (1 - age2 / 0.3));
+      } else {
+        col = e.kind === 0 ? TUR_COL[e.type] : COL_GOLD;
+        if (age2 < 0.5) addRing(sx, 0.2, sz, 0.35 + 0.65 * smooth(age2 / 0.5), col, 1.3 * (1 - age2 / 0.5));
+        for (j = 0; j < 7; j++) {
+          var a0 = vr(i * 11 + j * 3) * 6.2832, r0 = 0.15 + vr(i * 11 + j * 3 + 1) * 0.3, la = age2 - j * 0.03;
+          if (la > 0 && la < 0.6) addGlow(sx + Math.cos(a0) * r0, 0.3 + la * 2.1, sz + Math.sin(a0) * r0, 0.26 * (1 - la / 0.6) + 0.06, col, 1.2 * (1 - la / 0.6));
+        }
+      }
+    }
+    // --- leaks: red flash at the keep
+    for (i = rep.leakIdx[Math.max(0, kE - 8)]; i < rep.leakIdx[kE + 1]; i++) {
+      e = rep.leaks[i]; age2 = tEff - e.tick / TPS;
+      if (age2 < 0 || age2 >= 0.4) continue;
+      addGlow(KEEP_X, 0.7, KEEP_Z, 3.4 * (0.6 + 0.4 * age2 / 0.4), COL_RED, 1.1 * (1 - age2 / 0.4));
+      for (j = 0; j < 4; j++) addChip(KEEP_X, 0.6, KEEP_Z, e.id * 7 + j * 3 + 500, age2, 0.4, 1.4, 0.09, COL_RUBBLE);
+    }
+    // --- the fall: collapse burst and shockwave (time keeps running for these only)
+    if (frozen) {
+      var af = t - T_FALL;
+      if (af < 2.2) for (j = 0; j < 110; j++) addChip(KEEP_X, 0.5 + vr(j * 5 + 77) * 0.8, KEEP_Z, j * 9 + 3000, af, 2.2, 2.6, 0.17, j % 3 ? COL_RUBBLE : COL_RUBBLE2);
+      if (af < 1.3) { var rs = smooth(af / 1.3); addRing(KEEP_X, 0.09, KEEP_Z, 0.4 + 9.5 * rs, COL_SHOCK, 2.2 * (1 - af / 1.3)); addRing(KEEP_X, 0.09, KEEP_Z, 0.2 + 6.5 * rs, COL_RED, 1.2 * (1 - af / 1.3)); }
+      if (af < 0.5) addGlow(KEEP_X, 0.9, KEEP_Z, 5 + 5 * af, COL_SHOCK, 1.6 * (1 - af / 0.5));
+      if (af < 1.6) for (j = 0; j < 10; j++) addGlow(KEEP_X + (vr(j + 40) - 0.5) * 2.4 * (0.4 + af), 0.3 + af * (0.5 + vr(j + 60)), KEEP_Z + (vr(j + 50) - 0.5) * 2.4 * (0.4 + af), 1.6 + af, COL_RUBBLE, 0.22 * (1 - af / 1.6));
+    }
+    keep.update(t);
+    marks.instanceMatrix.needsUpdate = beams.instanceMatrix.needsUpdate = rings.instanceMatrix.needsUpdate = glows.instanceMatrix.needsUpdate = debris.instanceMatrix.needsUpdate = shells.instanceMatrix.needsUpdate = true;
+    marks.instanceColor.needsUpdate = beams.instanceColor.needsUpdate = rings.instanceColor.needsUpdate = glows.instanceColor.needsUpdate = debris.instanceColor.needsUpdate = true;
+    barBack.instanceMatrix.needsUpdate = barFill.instanceMatrix.needsUpdate = blobs.instanceMatrix.needsUpdate = true;
+    barBack.instanceColor.needsUpdate = barFill.instanceColor.needsUpdate = true;
+
+    // --- air lane shimmer, desaturation after the fall, trauma shake
+    dashTex.offset.x = -tEff * 0.45;
+    DESAT.value = frozen ? 0.93 * clamp01((t - T_FALL) / 1.0) : 0;
+    var trm = traumaAt(t), sh = trm * trm * 0.25;
+    camera.position.copy(camBase).addScaledVector(camRight, sh * noise1(t * 11.0, 101)).addScaledVector(camUp, sh * noise1(t * 11.0, 733));
+    camera.updateMatrixWorld();
+
+    hud.update(t, k);
+    renderer.clear();
+    renderer.render(scene, camera);
+    renderer.clearDepth();
+    renderer.render(hudScene, hudCam);
+  }
+
+  // ------------------------------------------------------------------ audio (Web Audio only, synthesized)
+  var audio = (function () {
+    var AC = window.AudioContext || window.webkitAudioContext, ctx = null, master = null, comp = null, noiseBuf = null, live = [], wind = null, windGain = null;
+    var arand = mulberry32(4242), shotTimes = [], popTimes = [], audible = false;
+    function ar() { return arand() / 4294967296; }
+    try {
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 0;
+      comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 8; comp.attack.value = 0.003; comp.release.value = 0.2;
+      master.connect(comp); comp.connect(ctx.destination);
+      noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 2), ctx.sampleRate);
+      var d = noiseBuf.getChannelData(0);
+      for (var i = 0; i < d.length; i++) d[i] = ar() * 2 - 1;
+      var p = ctx.resume(); if (p && p.catch) p.catch(function () { });
+    } catch (e) { ctx = null; }
+    function unlock() { if (ctx && ctx.state !== 'running') { var p = ctx.resume(); if (p && p.catch) p.catch(function () { }); } }
+    window.addEventListener('pointerdown', unlock, true);
+    window.addEventListener('keydown', unlock, true);
+    function out(pan, gain) {         // -> [gainNode] routed through a panner into the master bus
+      var g = ctx.createGain(); g.gain.value = gain;
+      if (ctx.createStereoPanner) { var pn = ctx.createStereoPanner(); pn.pan.value = Math.max(-1, Math.min(1, pan)); g.connect(pn); pn.connect(master); }
+      else g.connect(master);
+      return g;
+    }
+    function keepNode(src, stopAt) { live.push(src); src.onended = function () { var k = live.indexOf(src); if (k >= 0) live.splice(k, 1); }; src.start(); src.stop(stopAt); }
+    function tone(type, f0, f1, dur, gain, pan, attack) {
+      var t0 = ctx.currentTime, o = ctx.createOscillator(), g = out(pan, 0);
+      o.type = type; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(gain, t0 + (attack || 0.004)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); keepNode(o, t0 + dur + 0.02);
+    }
+    function noise(ftype, f0, f1, q, dur, gain, pan, attack) {
+      var t0 = ctx.currentTime, s = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), g = out(pan, 0);
+      s.buffer = noiseBuf; s.loop = true; s.playbackRate.value = 0.8 + ar() * 0.4;
+      fl.type = ftype; fl.Q.value = q; fl.frequency.setValueAtTime(f0, t0); fl.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(gain, t0 + (attack || 0.003)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      s.connect(fl); fl.connect(g);
+      live.push(s); s.onended = function () { var k = live.indexOf(s); if (k >= 0) live.splice(k, 1); };
+      s.start(t0, ar() * 1.5); s.stop(t0 + dur + 0.02);
+    }
+    var SHOT_PRIORITY = [3, 1, 4, 2, 0];       // loudest first: lance, cannon, flak, frost, bolt
+    function shot(type, pan) {
+      var v = 0.94 + ar() * 0.12;
+      if (type === 0) tone('square', 1500 * v, 520, 0.055, 0.05, pan);
+      else if (type === 1) { tone('sine', 170 * v, 46, 0.2, 0.34, pan); noise('lowpass', 900, 200, 0.7, 0.12, 0.16, pan); }
+      else if (type === 2) { noise('bandpass', 5200 * v, 2600, 5, 0.12, 0.09, pan); tone('sine', 2100 * v, 1500, 0.1, 0.03, pan); }
+      else if (type === 3) { tone('sawtooth', 980 * v, 150, 0.22, 0.16, pan); tone('sine', 1960 * v, 300, 0.16, 0.07, pan); }
+      else noise('bandpass', 1400 * v, 700, 1.4, 0.09, 0.2, pan);
+    }
+    function allowed(list, limit) {
+      var now = ctx.currentTime;
+      while (list.length && list[0] < now - 1) list.shift();
+      if (list.length >= limit) return false;
+      list.push(now); return true;
+    }
+    function panOf(x) { return (x / 24) * 1.6 - 0.8; }
+    // one-shots for the replay events crossed by forward playback between two sim times
+    function advance(tA, tB) {
+      if (!ctx || !audible || ctx.state !== 'running' || tB <= tA) return;
+      var kA = Math.floor(tA * TPS), kB = Math.min(Math.floor(tB * TPS), rep.lastTick), i, e, pr;
+      if (kB <= kA) return;
+      var after = tA >= T_FALL;
+      if (!after) {
+        for (pr = 0; pr < 5; pr++) {
+          for (i = rep.shotIdx[kA + 1]; i < rep.shotIdx[kB + 1]; i++) {
+            e = rep.shots[i];
+            if (e.type !== SHOT_PRIORITY[pr]) continue;
+            if (!allowed(shotTimes, 12)) { pr = 9; break; }
+            shot(e.type, panOf(SLOT_TILES[e.slot][0] + 0.5));
+          }
+        }
+        for (i = rep.killIdx[kA + 1]; i < rep.killIdx[kB + 1]; i++) {
+          if (!allowed(popTimes, 10)) break;
+          e = rep.kills[i]; routePoint(e.type === 2 ? ROUTE_A : ROUTE_G, e.prog, _rp);
+          tone('sine', 520 + ar() * 180, 210, 0.07, 0.07, panOf(_rp.x));
+        }
+        for (i = rep.waveIdx[kA + 1]; i < rep.waveIdx[kB + 1]; i++) {        // rising horn
+          tone('sawtooth', 147, 220, 0.6, 0.085, -0.5, 0.08); tone('triangle', 220, 330, 0.62, 0.11, -0.5, 0.1); tone('sawtooth', 110, 165, 0.6, 0.05, -0.4, 0.1);
+        }
+        for (i = rep.leakIdx[kA + 1]; i < rep.leakIdx[kB + 1]; i++) {        // stone crack + alarm
+          if (rep.fall && rep.leaks[i].tick === rep.fall.tick && rep.leaks[i].hp <= 0) continue;
+          noise('lowpass', 2600, 300, 0.8, 0.22, 0.42, 0.75, 0.002); tone('square', 880, 870, 0.13, 0.07, 0.7); tone('square', 660, 650, 0.3, 0.07, 0.7, 0.14);
+        }
+      }
+      if (rep.fall && rep.fall.tick > kA && rep.fall.tick <= kB) {            // deep collapse with rumble
+        noise('lowpass', 1400, 70, 0.6, 2.4, 0.75, 0.6, 0.01); tone('sine', 62, 27, 2.6, 0.6, 0.6, 0.02); tone('triangle', 96, 34, 1.5, 0.3, 0.6, 0.01);
+        noise('bandpass', 400, 120, 0.9, 1.2, 0.35, 0.6, 0.005);
+      }
+    }
+    function windOn(on) {
+      if (!ctx) return;
+      if (on && !wind && ctx.state === 'running') {
+        wind = ctx.createBufferSource(); wind.buffer = noiseBuf; wind.loop = true; wind.playbackRate.value = 0.5;
+        var fl = ctx.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = 260; fl.Q.value = 0.6;
+        var lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.17; lg.gain.value = 110; lfo.connect(lg); lg.connect(fl.frequency);
+        windGain = ctx.createGain(); windGain.gain.setValueAtTime(0.0001, ctx.currentTime); windGain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 1.5);
+        wind.connect(fl); fl.connect(windGain); windGain.connect(master);
+        wind.start(); lfo.start(); wind._lfo = lfo;
+      } else if (!on && wind) {
+        try { wind.stop(); wind._lfo.stop(); } catch (e) { }
+        wind = null; windGain = null;
+      }
+    }
+    // sound is audible only while PLAYING; anything still ringing is cut when playback stops
+    function setAudible(on) {
+      if (!ctx || on === audible) return;
+      audible = on;
+      var now = ctx.currentTime;
+      master.gain.cancelScheduledValues(now);
+      master.gain.setValueAtTime(master.gain.value, now);
+      master.gain.linearRampToValueAtTime(on ? 0.8 : 0, now + 0.04);
+      if (!on) {
+        var old = live; live = [];
+        for (var i = 0; i < old.length; i++) { try { old[i].onended = null; old[i].stop(now + 0.05); } catch (e) { } }
+        windOn(false);
+        shotTimes.length = 0; popTimes.length = 0;
+      }
+    }
+    return { advance: advance, setAudible: setAudible, windOn: windOn };
+  })();
+
+  // ------------------------------------------------------------------ playback state machine
+  var COUNTDOWN = 0, PLAYING = 1, PAUSED = 2, REFIRE_HOLD = 3, ENDED = 4;
+  var state = -1, simTime = 0, playbackSpeed = 1.0, countdownElapsed = 0, holdElapsed = 0, lastTs = null;
+  var elCount = document.getElementById('countdown'), elScrub = document.getElementById('scrubber'), elToggle = document.getElementById('btn-toggle');
+  var elPause = document.getElementById('icon-pause'), elPlay = document.getElementById('icon-play'), pills = document.querySelectorAll('.speed-pill');
+
+  function showPauseIcon(pauseShown) {
+    elPause.style.display = pauseShown ? '' : 'none';
+    elPlay.style.display = pauseShown ? 'none' : '';
+    elToggle.setAttribute('aria-label', pauseShown ? 'Pause' : 'Play');
+  }
+  function hideCountdown() { elCount.style.display = 'none'; elCount.textContent = ''; }
+  function setState(s) {
+    state = s;
+    audio.setAudible(s === PLAYING);
+  }
+
+  elToggle.addEventListener('click', function () {
+    if (state === PLAYING) { setState(PAUSED); showPauseIcon(false); }
+    else if (state === COUNTDOWN || state === REFIRE_HOLD) { hideCountdown(); simTime = 0; setState(PAUSED); showPauseIcon(false); }
+    else if (state === PAUSED) { setState(PLAYING); showPauseIcon(true); }
+    else if (state === ENDED) { hideCountdown(); simTime = 0; elScrub.value = '0'; setState(PLAYING); showPauseIcon(true); }
+  });
+  for (var pi = 0; pi < pills.length; pi++) {
+    pills[pi].addEventListener('click', function () {
+      playbackSpeed = parseFloat(this.getAttribute('data-speed'));
+      for (var k = 0; k < pills.length; k++) {
+        var on = pills[k] === this;
+        pills[k].classList.toggle('is-active', on);
+        pills[k].setAttribute('aria-checked', on ? 'true' : 'false');
+      }
+    });
+  }
+  elScrub.addEventListener('input', function () {
+    hideCountdown();
+    var v = parseFloat(elScrub.value);
+    simTime = Math.max(0, Math.min(DURATION, isNaN(v) ? 0 : v));
+    setState(PAUSED); showPauseIcon(false);
+    renderAt(simTime);
+  });
+  document.getElementById('btn-refire').addEventListener('click', function () {
+    hideCountdown();
+    simTime = 0; elScrub.value = '0';
+    setState(REFIRE_HOLD); holdElapsed = 0;
+    showPauseIcon(true);
+    renderAt(0);
+  });
+  window.addEventListener('resize', function () { fitCamera(); renderAt(simTime); });
+
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    if (lastTs === null) {                  // first frame after the resting scene: the countdown starts here
+      lastTs = ts;
+      if (state === -1) { state = COUNTDOWN; countdownElapsed = 0; elCount.style.display = 'block'; elCount.textContent = '3'; }
+      renderAt(simTime);
+      return;
+    }
+    var dt = Math.min((ts - lastTs) / 1000, 0.1);
+    if (dt < 0) dt = 0;
+    lastTs = ts;
+    if (state === COUNTDOWN) {
+      countdownElapsed += dt;
+      if (countdownElapsed >= 3) { hideCountdown(); setState(PLAYING); showPauseIcon(true); }
+      else { elCount.style.display = 'block'; elCount.textContent = countdownElapsed < 1 ? '3' : countdownElapsed < 2 ? '2' : '1'; }
+    } else if (state === REFIRE_HOLD) {
+      holdElapsed += dt;
+      if (holdElapsed >= 1) { setState(PLAYING); showPauseIcon(true); }
+    } else if (state === PLAYING) {
+      var prev = simTime;
+      simTime = Math.min(DURATION, simTime + dt * playbackSpeed);
+      elScrub.value = simTime.toFixed(3);
+      audio.advance(prev, simTime);
+      audio.windOn(simTime >= T_FALL + 1.2);
+      if (simTime >= DURATION) {
+        simTime = DURATION; elScrub.value = DURATION.toFixed(3);
+        setState(ENDED); showPauseIcon(false);
+      }
+    }
+    renderAt(simTime);
+  }
+
+  fitCamera();
+  renderAt(0);                              // the initial resting scene
+  requestAnimationFrame(frame);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div id="countdown" aria-hidden="true">3</div>
+
+<div id="dock" role="toolbar" aria-label="Simulation Controls">
+  <button id="btn-refire" type="button" aria-label="Re-fire" title="Re-fire">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+    </svg>
+    <span>Re-fire</span>
+  </button>
+  <span class="dock-sep" aria-hidden="true"></span>
+  <button id="btn-toggle" type="button" aria-label="Pause" title="Play / Pause">
+    <svg id="icon-pause" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+      <rect x="6" y="4" width="4" height="16" rx="1"/>
+      <rect x="14" y="4" width="4" height="16" rx="1"/>
+    </svg>
+    <svg id="icon-play" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="display:none;">
+      <path d="M8 5v14l11-7z"/>
+    </svg>
+  </button>
+  <span class="dock-sep" aria-hidden="true"></span>
+  <div id="speed-group" role="radiogroup" aria-label="Playback Speed">
+    <button class="speed-pill" type="button" role="radio" aria-checked="false" data-speed="0.25">0.25×</button>
+    <button class="speed-pill" type="button" role="radio" aria-checked="false" data-speed="0.5">0.5×</button>
+    <button class="speed-pill is-active" type="button" role="radio" aria-checked="true" data-speed="1.0">1.0×</button>
+    <button class="speed-pill" type="button" role="radio" aria-checked="false" data-speed="2.0">2.0×</button>
+  </div>
+  <span class="dock-sep" aria-hidden="true"></span>
+  <input id="scrubber" type="range" min="0" max="100" step="0.001" value="0" aria-label="Timeline Scrubber">
+</div>
+</body>
+</html>
