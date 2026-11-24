@@ -1,0 +1,24 @@
+# Benchmark Execution Report: Kimi Code K3.1 Pro (High), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Kimi Code 2.7.3`
+- **Model ID**: `kimi-code/k3.1-pro`
+- **Reasoning Effort**: `High`
+- **Deliverable**: `index.html`
+- **Code Size**: 64,412 bytes | 1,336 LOC
+- **SHA-256**: `4d992bd40cbcf8502ca69324fb35ce9cf2b6a854676e1e0d81cddb84a6f3c79d`
+- **Wall-Clock Duration**: 2898.92s
+- **Agent Turns / Steps**: 7
+- **Tool Calls**: 97
+- **Input Tokens (Uncached)**: 132,983
+- **Cached Read Tokens**: 7,226,112
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 0
+- **Output Tokens**: 85,466
+- **Verification**: FAIL (95.2% — 20/21 checks)
+- **Strategy Score**: 40.55 waves held (mean of five undisclosed seeds: 40.35, 41.53, 40.63, 40.40, 39.83)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=2d16b09baab99489, backward=5048be7b7ca0ac88, freshReload=2d16b09baab99489, endClamp=100/100, endedCanvasFrozen=True

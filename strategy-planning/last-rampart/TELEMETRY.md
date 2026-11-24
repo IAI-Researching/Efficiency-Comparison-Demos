@@ -32,6 +32,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Kimi Code K3.1 Pro (Low)** | run-1 | Kimi Code 2.7.3 | `Low` | **FAIL** (18/21) | 31.22 | **0.00** | 1103.0s | 69,004 | 2,396,499 | 0 | 32,380 | 44,073 B | `9a6e96b1c0ef...` |
 | **Kimi Code K3.1 Pro (Low)** | run-2 | Kimi Code 2.7.3 | `Low` | **FAIL** (19/21) | 37.33 | **0.00** | 1049.4s | 80,437 | 4,758,784 | 0 | 44,716 | 46,424 B | `f2239bad8ef5...` |
 | **Kimi Code K3.1 Pro (High)** | run-1 | Kimi Code 2.7.3 | `High` | **FAIL** (19/21) | 32.80 | **0.00** | 2995.4s | 151,916 | 9,169,676 | 0 | 84,284 | 63,762 B | `7b5db041dcee...` |
+| **Kimi Code K3.1 Pro (High)** | run-2 | Kimi Code 2.7.3 | `High` | **FAIL** (20/21) | 40.55 | **0.00** | 2898.9s | 132,983 | 7,226,112 | 0 | 85,466 | 64,412 B | `4d992bd40cbc...` |
 | **Kimi Code K3.1 Pro (Max)** | run-1 | Kimi Code 2.7.3 | `Max` | **PASS** (21/21) | 31.36 | **31.36** | 4183.1s | 168,486 | 9,667,927 | 0 | 112,875 | 55,459 B | `3deb90c16e2f...` |
 | **DeepSeek v4.1 Flash (Off)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Off` | **FAIL** (17/21) | 37.05 | **0.00** | 3350.9s | 239,677 | 130,138,752 | 0 | 319,375 | 104,581 B | `e55447f89b61...` |
 | **DeepSeek v4.1 Flash (Off)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Off` | **FAIL** (18/21) | 36.48 | **0.00** | 9445.6s | 1,349,063 | 512,633,600 | 0 | 511,151 | 134,743 B | `8ab3f7060d4c...` |
