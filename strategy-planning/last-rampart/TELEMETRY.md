@@ -88,6 +88,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Claude Fable 5.2 (Medium)** | run-2 | Claude Code 2.1.330 | `Medium` | **PASS** (21/21) | 45.02 | **45.02** | 1678.2s | 56 | 2,817,333 | 49,216 | 123,727 | 92,470 B | `70c1ed56bf54...` |
 | **Claude Fable 5.2 (High)** | run-1 | Claude Code 2.1.330 | `High` | **PASS** (21/21) | 47.79 | **47.79** | 5213.1s | 218 | 26,510,348 | 123,595 | 254,398 | 105,816 B | `3f3adcf6ed23...` |
 | **Claude Fable 5.2 (High)** | run-2 | Claude Code 2.1.330 | `High` | **PASS** (21/21) | 45.83 | **45.83** | 2849.2s | 114 | 10,467,353 | 104,078 | 218,972 | 114,404 B | `3d8866314fe4...` |
+| **Claude Fable 5.2 (High)** | run-3 | Claude Code 2.1.330 | `High` | **PASS** (21/21) | 46.87 | **46.87** | 2810.4s | 146 | 14,645,836 | 118,472 | 224,876 | 100,940 B | `c377fae83f0e...` |
 | **Claude Fable 5.2 (XHigh)** | run-1 | Claude Code 2.1.330 | `XHigh` | **PASS** (21/21) | 47.64 | **47.64** | 5670.7s | 208 | 35,694,053 | 250,046 | 417,237 | 130,050 B | `15461fcbc90c...` |
 | **Claude Fable 5.2 (XHigh)** | run-2 | Claude Code 2.1.330 | `XHigh` | **PASS** (21/21) | 47.89 | **47.89** | 5675.7s | 232 | 39,970,670 | 223,659 | 391,341 | 123,225 B | `03f54551ae5f...` |
 
