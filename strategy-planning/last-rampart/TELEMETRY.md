@@ -28,6 +28,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Codex GPT 6.2 Astra (High)** | run-3 | Codex CLI 0.172.0 | `High` | **PASS** (21/21) | 46.94 | **46.94** | 2777.8s | 4,642,766 | 4,594,560 | 15,429 | 56,632 | 66,566 B | `a480128e903b...` |
 | **Codex GPT 6.2 Astra (XHigh)** | run-1 | Codex CLI 0.172.0 | `XHigh` | **PASS** (21/21) | 47.27 | **47.27** | 1570.9s | 4,973,880 | 4,928,640 | 17,684 | 62,023 | 76,497 B | `73ffd2fcbbcd...` |
 | **Codex GPT 6.2 Astra (XHigh)** | run-2 | Codex CLI 0.172.0 | `XHigh` | **PASS** (21/21) | 45.59 | **45.59** | 1479.2s | 3,579,011 | 3,530,624 | 14,370 | 53,556 | 72,590 B | `57485b69a23f...` |
+| **Codex GPT 6.2 Astra (XHigh)** | run-3 | Codex CLI 0.172.0 | `XHigh` | **PASS** (21/21) | 45.69 | **45.69** | 1704.2s | 3,654,945 | 3,615,104 | 16,733 | 56,031 | 71,700 B | `036f82fd28e3...` |
 | **Gemini 4 Neon (Low)** | run-1 | Antigravity CLI 1.5.13 | `Low` | **FAIL** (20/21) | 41.05 | **0.00** | 599.3s | 158,566 | 372,373 | 9,566 | 70,877 | 73,751 B | `ea2fe677d4df...` |
 | **Gemini 4 Neon (Low)** | run-2 | Antigravity CLI 1.5.13 | `Low` | **PASS** (21/21) | 38.18 | **38.18** | 599.0s | 200,357 | 628,191 | 8,789 | 64,592 | 79,411 B | `df3b1c555a0c...` |
 | **Gemini 4 Neon (Low)** | run-3 | Antigravity CLI 1.5.13 | `Low` | **PASS** (21/21) | 42.00 | **42.00** | 424.4s | 85,550 | 333,239 | 8,486 | 58,447 | 82,149 B | `e5345ad64cc6...` |
