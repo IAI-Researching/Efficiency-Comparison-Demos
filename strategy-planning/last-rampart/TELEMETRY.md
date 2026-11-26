@@ -22,6 +22,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Codex GPT 6.2 Astra (Low)** | run-3 | Codex CLI 0.172.0 | `Low` | **PASS** (21/21) | 41.82 | **41.82** | 678.5s | 1,414,416 | 1,391,744 | 1,051 | 23,885 | 34,851 B | `12bd4bf06c4a...` |
 | **Codex GPT 6.2 Astra (Medium)** | run-1 | Codex CLI 0.172.0 | `Medium` | **PASS** (21/21) | 44.99 | **44.99** | 970.6s | 3,223,803 | 3,179,008 | 4,920 | 36,066 | 44,849 B | `2f219e59317d...` |
 | **Codex GPT 6.2 Astra (Medium)** | run-2 | Codex CLI 0.172.0 | `Medium` | **PASS** (21/21) | 42.75 | **42.75** | 875.2s | 2,876,471 | 2,834,688 | 5,742 | 32,023 | 45,230 B | `44f7f945e2c9...` |
+| **Codex GPT 6.2 Astra (Medium)** | run-3 | Codex CLI 0.172.0 | `Medium` | **FAIL** (20/21) | 47.46 | **0.00** | 1156.1s | 2,751,029 | 2,713,728 | 6,636 | 39,811 | 48,575 B | `d55327f57c69...` |
 | **Codex GPT 6.2 Astra (High)** | run-1 | Codex CLI 0.172.0 | `High` | **PASS** (21/21) | 45.85 | **45.85** | 1662.7s | 5,878,369 | 5,822,848 | 14,865 | 56,559 | 67,324 B | `fdbdb7287de8...` |
 | **Codex GPT 6.2 Astra (High)** | run-2 | Codex CLI 0.172.0 | `High` | **FAIL** (20/21) | 45.27 | **0.00** | 1652.7s | 5,401,578 | 5,351,680 | 15,437 | 65,427 | 69,920 B | `466424e98ade...` |
 | **Codex GPT 6.2 Astra (XHigh)** | run-1 | Codex CLI 0.172.0 | `XHigh` | **PASS** (21/21) | 47.27 | **47.27** | 1570.9s | 4,973,880 | 4,928,640 | 17,684 | 62,023 | 76,497 B | `73ffd2fcbbcd...` |
