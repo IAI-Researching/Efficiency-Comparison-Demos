@@ -1,0 +1,24 @@
+# Benchmark Execution Report: Codex GPT 6.2 Astra (Low), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Codex CLI 0.172.0`
+- **Model ID**: `gpt-6.2-astra`
+- **Reasoning Effort**: `Low`
+- **Deliverable**: `index.html`
+- **Code Size**: 38,017 bytes | 608 LOC
+- **SHA-256**: `ba3c71b36d2e5119067589bd29a7f1ee7dfa49ed80303b4eb7e9d00f231e63cb`
+- **Wall-Clock Duration**: 675.28s
+- **Agent Turns / Steps**: 37
+- **Tool Calls**: 33
+- **Input Tokens (Uncached)**: 1,621,051
+- **Cached Read Tokens**: 1,593,344
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 2,109
+- **Output Tokens**: 26,248
+- **Verification**: FAIL (95.2% — 20/21 checks)
+- **Strategy Score**: 43.38 waves held (mean of five undisclosed seeds: 45.55, 42.75, 43.28, 41.45, 43.85)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 0.0 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
+- **Failed Checks**:
+  - `[Runtime] Cross-Reload Seed-42 Determinism, Backward Seek & Endpoint Hold`: h(tA)=7c2905b55a1e468a, backward=0a2626184f117052, freshReload=7c2905b55a1e468a, endClamp=100/100, endedCanvasFrozen=True
