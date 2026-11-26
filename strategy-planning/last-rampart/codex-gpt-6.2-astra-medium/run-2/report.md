@@ -1,0 +1,22 @@
+# Benchmark Execution Report: Codex GPT 6.2 Astra (Medium), run 2
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Codex CLI 0.172.0`
+- **Model ID**: `gpt-6.2-astra`
+- **Reasoning Effort**: `Medium`
+- **Deliverable**: `index.html`
+- **Code Size**: 45,230 bytes | 888 LOC
+- **SHA-256**: `44f7f945e2c95b98e3c1175a6ef42fc9c23ef3ddbe3ccf9a876a0195614a391f`
+- **Wall-Clock Duration**: 875.17s
+- **Agent Turns / Steps**: 52
+- **Tool Calls**: 48
+- **Input Tokens (Uncached)**: 2,876,471
+- **Cached Read Tokens**: 2,834,688
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 5,742
+- **Output Tokens**: 32,023
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 42.75 waves held (mean of five undisclosed seeds: 44.03, 42.23, 45.45, 41.03, 41.03)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 42.75 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
