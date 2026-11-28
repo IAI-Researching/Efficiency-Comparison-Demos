@@ -1,0 +1,22 @@
+# Benchmark Execution Report: Gemini 4 Carbon (High), run 3
+
+- **Benchmark**: `strategy-planning/last-rampart`
+- **Developer Harness**: `Antigravity CLI 1.5.18`
+- **Model ID**: `gemini-4-carbon-high`
+- **Reasoning Effort**: `High`
+- **Deliverable**: `index.html`
+- **Code Size**: 132,755 bytes | 3,630 LOC
+- **SHA-256**: `c328e62e2e950baf7a08b6e51bbfafaeef268d4659ac8d98ae8dc6f1aa9d5b86`
+- **Wall-Clock Duration**: 1976.22s
+- **Agent Turns / Steps**: 26
+- **Tool Calls**: 49
+- **Input Tokens (Uncached)**: 247,291
+- **Cached Read Tokens**: 2,721,895
+- **Cache Creation Tokens**: 0
+- **Thinking / Reasoning Tokens**: 59,253
+- **Output Tokens**: 189,111
+- **Verification**: PASS (100.0% — 21/21 checks)
+- **Strategy Score**: 44.06 waves held (mean of five undisclosed seeds: 45.48, 42.53, 45.63, 43.93, 42.73)
+- **Self-check Vectors**: A match, B match
+- **Round Score**: 44.06 (0 when the run did not ship)
+- **Unobstructed Viewport**: PASSED (Zero extraneous headers, mastheads, or phase panels)
