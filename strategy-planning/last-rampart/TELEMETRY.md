@@ -47,8 +47,6 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Kimi Code K3.1 Pro (High)** | run-2 | Kimi Code 2.7.3 | `High` | **FAIL** (20/21) | 40.55 | **0.00** | 2898.9s | 132,983 | 7,226,112 | 0 | 85,466 | 64,412 B | `4d992bd40cbc...` |
 | **Kimi Code K3.1 Pro (Max)** | run-1 | Kimi Code 2.7.3 | `Max` | **PASS** (21/21) | 31.36 | **31.36** | 4183.1s | 168,486 | 9,667,927 | 0 | 112,875 | 55,459 B | `3deb90c16e2f...` |
 | **Kimi Code K3.1 Pro (Max)** | run-2 | Kimi Code 2.7.3 | `Max` | **PASS** (21/21) | 43.72 | **43.72** | 3254.0s | 199,118 | 12,820,274 | 0 | 110,996 | 73,991 B | `b7ecb7740ea9...` |
-| **GLM 5.4 (Low)** | run-1 | ZCode CLI 0.18.0 | `Low` | **FAIL** (0/1) | N/A | **0.00** | 1.1s | N/A | N/A | N/A | N/A | 0 B | N/A |
-| **GLM 5.4 (High)** | run-1 | ZCode CLI 0.18.0 | `High` | **FAIL** (0/1) | N/A | **0.00** | 1.0s | N/A | N/A | N/A | N/A | 0 B | N/A |
 | **DeepSeek v4.1 Flash (Off)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Off` | **FAIL** (17/21) | 37.05 | **0.00** | 3350.9s | 239,677 | 130,138,752 | 0 | 319,375 | 104,581 B | `e55447f89b61...` |
 | **DeepSeek v4.1 Flash (Off)** | run-2 | DeepSeek CLI 0.2.2-rc.5 | `Off` | **FAIL** (18/21) | 36.48 | **0.00** | 9445.6s | 1,349,063 | 512,633,600 | 0 | 511,151 | 134,743 B | `8ab3f7060d4c...` |
 | **DeepSeek v4.1 Flash (Low)** | run-1 | DeepSeek CLI 0.2.2-rc.5 | `Low` | **PASS** (21/21) | 44.78 | **44.78** | 2251.7s | 135,505 | 37,578,496 | 0 | 236,569 | 109,308 B | `1cb008313144...` |
@@ -69,6 +67,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Gemini 4 Hydrogen (XHigh)** | run-1 | Antigravity CLI 1.5.14 | `XHigh` | **PASS** (21/21) | 45.45 | **45.45** | 29778.3s | 585,087 | 8,406,026 | 51,325 | 215,296 | 105,300 B | `7b7015e1c06c...` |
 | **Gemini 4 Hydrogen (XHigh)** | run-2 | Antigravity CLI 1.5.14 | `XHigh` | **PASS** (21/21) | 44.01 | **44.01** | 1402.7s | 377,961 | 9,285,164 | 78,224 | 274,316 | 115,074 B | `ed8fa7cfb1be...` |
 | **Gemini 4 Hydrogen (XHigh)** | run-3 | Antigravity CLI 1.5.14 | `XHigh` | **FAIL** (20/21) | 46.00 | **0.00** | 1437.1s | 412,038 | 9,669,156 | 63,449 | 296,840 | 104,171 B | `a6310579d179...` |
+| **Gemini 4 Carbon (Low)** | run-1 | Antigravity CLI 1.5.18 | `Low` | **PASS** (21/21) | 41.51 | **41.51** | 3976.4s | 413,115 | 4,632,952 | 0 | 215,629 | 126,373 B | `774523d71180...` |
 | **Claude Opus 5.5 (Low)** | run-1 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 35.95 | **35.95** | 542.5s | 38 | 1,050,941 | 13,717 | 61,054 | 65,536 B | `fb4e37eef443...` |
 | **Claude Opus 5.5 (Low)** | run-2 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 42.93 | **42.93** | 694.1s | 54 | 1,639,937 | 15,487 | 65,921 | 67,178 B | `4b3ae275743d...` |
 | **Claude Opus 5.5 (Low)** | run-3 | Claude Code 2.1.330 | `Low` | **PASS** (21/21) | 41.29 | **41.29** | 694.0s | 40 | 1,160,743 | 12,974 | 63,470 | 65,316 B | `d1ba05f38cd2...` |
