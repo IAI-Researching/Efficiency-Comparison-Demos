@@ -69,6 +69,7 @@ is published with its tokens, cost and time and scores 0 ("did not ship"). See P
 | **Gemini 4 Hydrogen (XHigh)** | run-3 | Antigravity CLI 1.5.14 | `XHigh` | **FAIL** (20/21) | 46.00 | **0.00** | 1437.1s | 412,038 | 9,669,156 | 63,449 | 296,840 | 104,171 B | `a6310579d179...` |
 | **Gemini 4 Carbon (Low)** | run-1 | Antigravity CLI 1.5.18 | `Low` | **PASS** (21/21) | 41.51 | **41.51** | 3976.4s | 413,115 | 4,632,952 | 0 | 215,629 | 126,373 B | `774523d71180...` |
 | **Gemini 4 Carbon (Low)** | run-2 | Antigravity CLI 1.5.18 | `Low` | **PASS** (21/21) | 41.11 | **41.11** | 2606.1s | 332,990 | 4,790,627 | 0 | 184,264 | 124,437 B | `d41f35d1ea27...` |
+| **Gemini 4 Carbon (Low)** | run-3 | Antigravity CLI 1.5.18 | `Low` | **PASS** (21/21) | 42.73 | **42.73** | 1880.8s | 214,566 | 3,282,524 | 0 | 148,646 | 140,826 B | `2c9fedef94fa...` |
 | **Gemini 4 Carbon (Medium)** | run-1 | Antigravity CLI 1.5.18 | `Medium` | **PASS** (21/21) | 44.62 | **44.62** | 2493.3s | 281,990 | 4,102,940 | 49,836 | 187,181 | 120,838 B | `a7a195b7f7e1...` |
 | **Gemini 4 Carbon (Medium)** | run-2 | Antigravity CLI 1.5.18 | `Medium` | **PASS** (21/21) | 41.88 | **41.88** | 2056.9s | 223,653 | 2,566,277 | 45,668 | 153,481 | 121,602 B | `53e408a8833f...` |
 | **Gemini 4 Carbon (High)** | run-1 | Antigravity CLI 1.5.18 | `High` | **PASS** (21/21) | 45.09 | **45.09** | 1980.4s | 241,130 | 3,534,549 | 53,020 | 169,968 | 118,388 B | `44e376da9fa9...` |
